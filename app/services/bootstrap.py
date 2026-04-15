@@ -6,12 +6,7 @@ Both helpers are idempotent and safe to call on every boot.
 import shutil
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
-
-import aiosqlite
-
-from app.config import DATA_DIR, settings
+from app.config import settings
 
 
 # ─── SSL cert auto-generation ─────────────────────
@@ -110,7 +105,7 @@ STARTER_HABITS = [
     "Check in with yourself",
 ]
 
-STARTER_KANBAN_BOARD = "Getting Started"
+STARTER_KANBAN_BOARD = "personal"
 STARTER_KANBAN_CARDS = [
     "Explore PAM's features",
     "Set up Claude + Whisper",
@@ -122,9 +117,6 @@ async def seed_starter_data():
     """Insert starter todos/habits/kanban only if the DB is pristine."""
     if not settings.seed_starter_data:
         return
-
-    db_path = DATA_DIR / "notes.db"
-    now = datetime.now().isoformat()
 
     # Seed todos via the todos service so the schema stays a single source of
     # truth (todos.py owns `CREATE TABLE todos`, including the `position`
@@ -144,43 +136,17 @@ async def seed_starter_data():
             await add_todo(text, recurrence="daily")
         print(f"[PAM] Seeded {len(STARTER_TODOS)} starter todos + {len(STARTER_HABITS)} starter habits")
 
-    async with aiosqlite.connect(str(db_path)) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS kanban_boards (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                created TEXT NOT NULL
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS kanban_cards (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                board_id INTEGER NOT NULL,
-                column_name TEXT NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT DEFAULT '',
-                sort_order INTEGER DEFAULT 0,
-                created TEXT NOT NULL,
-                updated TEXT NOT NULL
-            )
-        """)
-        await db.commit()
+    # Seed kanban via the kanban service so the schema (and the hardcoded
+    # BOARDS whitelist) stay a single source of truth.
+    from app.services.kanban import _get_db as _kanban_db, create_card
+    kdb = await _kanban_db()
+    try:
+        cur = await kdb.execute("SELECT COUNT(*) FROM kanban_cards")
+        card_count = (await cur.fetchone())[0]
+    finally:
+        await kdb.close()
 
-        cursor = await db.execute("SELECT COUNT(*) FROM kanban_cards")
-        card_count = (await cursor.fetchone())[0]
-
-        if card_count == 0:
-            cursor = await db.execute(
-                "INSERT INTO kanban_boards (name, created) VALUES (?, ?)",
-                (STARTER_KANBAN_BOARD, now),
-            )
-            board_id = cursor.lastrowid
-            for i, title in enumerate(STARTER_KANBAN_CARDS):
-                await db.execute(
-                    "INSERT INTO kanban_cards (board_id, column_name, title, sort_order, created, updated) "
-                    "VALUES (?, 'Backlog', ?, ?, ?, ?)",
-                    (board_id, title, i, now, now),
-                )
-            print(f"[PAM] Seeded '{STARTER_KANBAN_BOARD}' kanban board with {len(STARTER_KANBAN_CARDS)} cards")
-
-        await db.commit()
+    if card_count == 0:
+        for title in STARTER_KANBAN_CARDS:
+            await create_card(board=STARTER_KANBAN_BOARD, title=title)
+        print(f"[PAM] Seeded '{STARTER_KANBAN_BOARD}' kanban board with {len(STARTER_KANBAN_CARDS)} cards")
