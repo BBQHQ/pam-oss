@@ -266,10 +266,24 @@ Install each of these with their default settings unless noted:
 
 1. **Python 3.11 or newer** — [python.org/downloads](https://www.python.org/downloads/). **Important:** on the first installer screen, check the box **"Add Python to PATH"** before clicking Install.
 2. **Git** — [git-scm.com/downloads](https://git-scm.com/downloads). Accept all defaults. (You don't have to use Git yourself, but PAM's voice-transcription installer uses it behind the scenes.)
-3. **ffmpeg** — grab a Windows build from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (the "release essentials" zip). Unzip it to `C:\ffmpeg`, then add `C:\ffmpeg\bin` to your system PATH. (Start menu → "Edit the system environment variables" → **Environment Variables** → under **System variables** pick **Path** → **Edit** → **New** → paste `C:\ffmpeg\bin` → OK everything.)
-4. **Claude Code CLI** — follow [docs.claude.com/claude-code](https://docs.claude.com/claude-code). After installing, open PowerShell, type `claude`, and sign in with your Claude subscription.
+3. **ffmpeg** — open PowerShell and run:
+   ```
+   winget install "FFmpeg (Essentials Build)"
+   ```
+   That one line installs ffmpeg and puts it on your PATH. (If you don't have `winget`, see the manual fallback below.)
+4. **Claude Code CLI** — open PowerShell and run:
+   ```
+   irm https://claude.ai/install.ps1 | iex
+   ```
+   When it finishes, type `claude` and sign in with your Claude subscription.
 
 You do **not** need Visual Studio, CMake, or any compiler — we're going to download pre-built Whisper binaries in step 4 instead of building from source.
+
+<details>
+<summary>Manual ffmpeg install (if you don't have winget)</summary>
+
+Grab the "release essentials" zip from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/). Unzip to `C:\ffmpeg`, then add `C:\ffmpeg\bin` to your system PATH (Start menu → "Edit the system environment variables" → **Environment Variables** → under **System variables** pick **Path** → **Edit** → **New** → paste `C:\ffmpeg\bin` → OK everything).
+</details>
 
 Close and reopen any open terminals after installing so the PATH changes take effect.
 
@@ -351,6 +365,9 @@ whisper\
 
 ### 5. Start PAM
 
+**Easiest way — double-click `start-pam.bat`** in the PAM folder. A terminal window opens, activates the virtual environment, and launches PAM automatically. Leave that window open — closing it stops PAM.
+
+Or, manually:
 ```
 python -m app.main
 ```
@@ -359,13 +376,15 @@ Open **https://localhost:8400** in your browser. You'll see a scary-looking "You
 
 ### Leaving and coming back
 
-If you close the terminal, you'll need to reopen it in the PAM folder (address bar → `powershell` → Enter) and run the activate line again before launching PAM:
+Next time you want to use PAM, just double-click `start-pam.bat` again — no need to activate anything manually.
+
+If you prefer the command line: reopen PowerShell in the PAM folder (address bar → `powershell` → Enter), then:
 ```
 .venv\Scripts\Activate.ps1
 python -m app.main
 ```
 
-To have PAM start automatically in the background, see [nssm](https://nssm.cc/) or Windows Task Scheduler.
+To have PAM start automatically in the background (even on reboot), see [nssm](https://nssm.cc/) or Windows Task Scheduler — both can run `start-pam.bat` as a service.
 
 ---
 
