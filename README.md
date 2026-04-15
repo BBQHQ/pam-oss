@@ -35,11 +35,13 @@ lock-in beyond the AI model itself.
 
 ## Install
 
+> **Not a programmer?** Skip ahead to [Windows install for non-programmers](#windows-install-for-non-programmers) for a click-by-click walkthrough.
+
 ### Prerequisites
 
 Required:
 - **Python 3.11+**
-- **git**
+- **git** — used by the Whisper installer to fetch whisper.cpp. You can download PAM itself as a ZIP if you prefer, but Git still needs to be installed for step 2.
 - **ffmpeg** on `PATH`
 - **Claude subscription + Claude Code CLI** — the AI brain. Install from https://docs.claude.com/claude-code, then run `claude` once to authenticate.
 
@@ -48,10 +50,11 @@ Optional (each integration self-disables cleanly if missing):
 - **Gmail account with an app password** — powers briefing + check-in emails
 - **Google Cloud OAuth2 Desktop client** — powers the calendar widget
 
-### 1. Clone + install deps
+### 1. Get the code + install deps
+
+Either clone with Git, or download the repo as a ZIP from GitHub (**Code → Download ZIP**) and unzip it. Then:
 
 ```bash
-git clone https://github.com/YOUR_USER/pam.git
 cd pam
 python -m venv .venv
 source .venv/bin/activate       # Windows: .venv\Scripts\Activate.ps1
@@ -218,6 +221,96 @@ Full layout and contributing guide: see [`CLAUDE.md`](CLAUDE.md) and [`CONTRIBUT
 - **"Whisper binary not found"** — run `./scripts/install_whisper.sh`. The first run takes a while to build + download the model.
 - **Briefing returns empty / no AI** — check `claude --print -p "hi"` on the host. If it fails, the CLI isn't set up.
 - **`GET /health`** returns per-integration status — use this to diagnose what's wired and what isn't.
+
+---
+
+## Windows install for non-programmers
+
+If you've never used a terminal before, follow these steps in order. You'll copy-paste a handful of commands — nothing to write from scratch.
+
+### 1. Install the prerequisites
+
+Install each of these with their default settings unless noted:
+
+1. **Python 3.11 or newer** — [python.org/downloads](https://www.python.org/downloads/). **Important:** on the first installer screen, check the box **"Add Python to PATH"** before clicking Install.
+2. **Git** — [git-scm.com/downloads](https://git-scm.com/downloads). Accept all defaults. (You don't have to use Git yourself, but PAM's voice-transcription installer uses it behind the scenes.)
+3. **ffmpeg** — grab a Windows build from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (the "release essentials" zip). Unzip it to `C:\ffmpeg`, then add `C:\ffmpeg\bin` to your system PATH. (Start menu → "Edit the system environment variables" → **Environment Variables** → under **System variables** pick **Path** → **Edit** → **New** → paste `C:\ffmpeg\bin` → OK everything.)
+4. **Claude Code CLI** — follow [docs.claude.com/claude-code](https://docs.claude.com/claude-code). After installing, open PowerShell, type `claude`, and sign in with your Claude subscription.
+
+Close and reopen any open terminals after installing so the PATH changes take effect.
+
+### 2. Download the PAM code
+
+Easiest way (no command line needed):
+1. Go to the PAM GitHub page.
+2. Click the green **Code** button → **Download ZIP**.
+3. Unzip it somewhere you'll remember, like `C:\PAM`.
+
+(If you're comfortable with Git, `git clone` works too — same result.)
+
+### 3. Set up PAM's environment
+
+You'll do this in a terminal window. Don't worry — you'll only type a few lines and you can copy them exactly.
+
+**Open a terminal in the PAM folder:**
+1. Open **File Explorer** and go to the PAM folder.
+2. Click once in the address bar at the top, type `powershell`, and press **Enter**. A blue window opens, already pointing at the PAM folder.
+
+**Create the virtual environment** (a private sandbox for PAM's parts):
+```
+python -m venv .venv
+```
+Wait 10–30 seconds for the prompt to come back. A `.venv` folder appears inside PAM.
+
+**Activate it:**
+```
+.venv\Scripts\Activate.ps1
+```
+You'll know it worked because `(.venv)` appears at the start of your prompt.
+
+> If PowerShell complains about "running scripts is disabled," paste this, press Enter, answer **Y**, then try activate again:
+> ```
+> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+> ```
+
+**Install PAM's parts:**
+```
+pip install -r requirements.txt
+```
+Text scrolls by for 1–3 minutes. When the prompt returns with no red error, it's done.
+
+**Create the settings file:**
+1. In File Explorer, find `.env.example` in the PAM folder.
+2. Right-click → **Copy**, then right-click empty space → **Paste**. You'll get `.env.example - Copy`.
+3. Rename the copy to exactly `.env` (leading dot, no `.txt` on the end).
+
+You don't need to open or edit it — the defaults work.
+
+### 4. Install Whisper (voice transcription)
+
+In the same terminal (still showing `(.venv)`):
+```
+.\scripts\install_whisper.ps1
+```
+This downloads and builds the voice engine and fetches the speech model. 2–10 minutes.
+
+### 5. Start PAM
+
+```
+python -m app.main
+```
+
+Open **https://localhost:8400** in your browser. You'll see a scary-looking "Your connection is not private" warning — that's expected because PAM made its own certificate. Click **Advanced** → **Continue to localhost**. You only do this once per browser.
+
+### Leaving and coming back
+
+If you close the terminal, you'll need to reopen it in the PAM folder (address bar → `powershell` → Enter) and run the activate line again before launching PAM:
+```
+.venv\Scripts\Activate.ps1
+python -m app.main
+```
+
+To have PAM start automatically in the background, see [nssm](https://nssm.cc/) or Windows Task Scheduler.
 
 ---
 
