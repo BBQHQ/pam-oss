@@ -43,9 +43,11 @@ Required:
 - **Python 3.11+**
 - **git** — used by the Whisper installer to fetch whisper.cpp. You can download PAM itself as a ZIP if you prefer, but Git still needs to be installed for step 2.
 - **ffmpeg** on `PATH`
-- **CMake** on `PATH` — used to build whisper.cpp.
-- **C/C++ compiler toolchain** — Visual Studio Build Tools (Windows, "Desktop development with C++" workload), Xcode Command Line Tools (macOS), or `build-essential` (Linux).
 - **Claude subscription + Claude Code CLI** — the AI brain. Install from https://docs.claude.com/claude-code, then run `claude` once to authenticate.
+
+Only needed if you plan to **build whisper.cpp from source** instead of downloading the pre-built binaries (see step 2, Option B):
+- **CMake** on `PATH`
+- **C/C++ compiler toolchain** — Visual Studio Build Tools (Windows, "Desktop development with C++" workload), Xcode Command Line Tools (macOS), or `build-essential` (Linux)
 
 Optional (each integration self-disables cleanly if missing):
 - **GitHub CLI** (`gh auth login`) — powers the briefing's "recent commits" section
@@ -66,13 +68,40 @@ cp .env.example .env             # edit if you want to override defaults
 
 ### 2. Install Whisper (voice transcription)
 
+You have two options. **Option A is the easy path on Windows** — no compiler needed.
+
+#### Option A — Download pre-built binaries (recommended for Windows)
+
+1. Go to the whisper.cpp releases page: [github.com/ggerganov/whisper.cpp/releases](https://github.com/ggerganov/whisper.cpp/releases).
+2. Download the build that matches your hardware:
+   - **CUDA GPU (NVIDIA):** `whisper-cublas-<ver>-bin-x64.zip`
+   - **CPU-only:** `whisper-blas-bin-x64.zip` (or `-Win32.zip` on 32-bit systems)
+3. Create a `whisper\` folder inside your PAM directory and extract the zip into it. The exe and DLLs should land in `whisper\whisper-server.exe` etc. If your zip extracts to a `Release\` subfolder, move the contents up one level so `whisper-server.exe` sits directly in `whisper\`.
+4. Download the model file: [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~500 MB). Save it to `whisper\models\ggml-large-v3-turbo-q5_0.bin` (create the `models\` folder if needed).
+
+Final layout should look like:
+```
+whisper/
+├── whisper-server.exe
+├── ggml-cuda.dll        (and other .dlls from the zip)
+├── ...
+└── models/
+    └── ggml-large-v3-turbo-q5_0.bin
+```
+
+Prefer a smaller/faster model? Browse the [ggerganov/whisper.cpp model index](https://huggingface.co/ggerganov/whisper.cpp/tree/main) and swap the filename. Set `WHISPER_MODEL=<filename>` in `.env` to match.
+
+#### Option B — Build from source
+
+Only needed if a pre-built binary doesn't exist for your platform (e.g., Linux or Apple Silicon) or you want to customize the build. **Requires CMake and a C++ compiler toolchain** (see Prerequisites).
+
 ```bash
 ./scripts/install_whisper.sh     # Windows: .\scripts\install_whisper.ps1
 ```
 
-This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and downloads the default model (~500 MB). Takes 2–10 minutes.
+This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and downloads the default model. Takes 2–10 minutes.
 
-Override the model if you want a smaller one:
+Override the model:
 ```bash
 WHISPER_MODEL=ggml-base.en-q5_0.bin ./scripts/install_whisper.sh
 ```
@@ -220,8 +249,8 @@ Full layout and contributing guide: see [`CLAUDE.md`](CLAUDE.md) and [`CONTRIBUT
 ## Troubleshooting
 
 - **Mic button greyed out** — your browser needs HTTPS on a non-localhost origin. PAM's auto-generated cert should handle this; if not, run `./scripts/generate_cert.sh`.
-- **"Whisper binary not found"** — run `./scripts/install_whisper.sh`. The first run takes a while to build + download the model.
-- **`cmake is not recognized` / `'cl' is not recognized` when running the Whisper installer** — you're missing CMake and/or the Visual Studio C++ build tools. Install both (see Prerequisites), **close and reopen your terminal** so PATH updates, then re-run the installer.
+- **"Whisper binary not found"** — make sure `whisper-server.exe` sits directly inside the `whisper\` folder (not in a `Release\` subfolder) and that the model file is at `whisper\models\<model-name>.bin`. See step 2 of the install for the expected layout.
+- **`cmake is not recognized` / `'cl' is not recognized` when running `install_whisper.ps1`** — you're trying to build from source without the toolchain. On Windows, use the pre-built binary path (step 2, Option A) instead — no compiler needed.
 - **Briefing returns empty / no AI** — check `claude --print -p "hi"` on the host. If it fails, the CLI isn't set up.
 - **`GET /health`** returns per-integration status — use this to diagnose what's wired and what isn't.
 
@@ -238,9 +267,9 @@ Install each of these with their default settings unless noted:
 1. **Python 3.11 or newer** — [python.org/downloads](https://www.python.org/downloads/). **Important:** on the first installer screen, check the box **"Add Python to PATH"** before clicking Install.
 2. **Git** — [git-scm.com/downloads](https://git-scm.com/downloads). Accept all defaults. (You don't have to use Git yourself, but PAM's voice-transcription installer uses it behind the scenes.)
 3. **ffmpeg** — grab a Windows build from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (the "release essentials" zip). Unzip it to `C:\ffmpeg`, then add `C:\ffmpeg\bin` to your system PATH. (Start menu → "Edit the system environment variables" → **Environment Variables** → under **System variables** pick **Path** → **Edit** → **New** → paste `C:\ffmpeg\bin` → OK everything.)
-4. **CMake** — [cmake.org/download](https://cmake.org/download/). Grab the "Windows x64 Installer" (.msi). During setup, choose **"Add CMake to the system PATH for all users"**. This is used to build the Whisper voice engine.
-5. **Visual Studio Build Tools** — [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/) → scroll down to **"Tools for Visual Studio"** → **"Build Tools for Visual Studio"**. In the installer, check the **"Desktop development with C++"** workload and click Install. ~5–7 GB. This provides the C++ compiler that CMake needs.
-6. **Claude Code CLI** — follow [docs.claude.com/claude-code](https://docs.claude.com/claude-code). After installing, open PowerShell, type `claude`, and sign in with your Claude subscription.
+4. **Claude Code CLI** — follow [docs.claude.com/claude-code](https://docs.claude.com/claude-code). After installing, open PowerShell, type `claude`, and sign in with your Claude subscription.
+
+You do **not** need Visual Studio, CMake, or any compiler — we're going to download pre-built Whisper binaries in step 4 instead of building from source.
 
 Close and reopen any open terminals after installing so the PATH changes take effect.
 
@@ -293,11 +322,32 @@ You don't need to open or edit it — the defaults work.
 
 ### 4. Install Whisper (voice transcription)
 
-In the same terminal (still showing `(.venv)`):
+Instead of compiling Whisper from source, you'll download the pre-built Windows binaries. No compiler needed.
+
+**4a. Download the binary zip:**
+1. Go to [github.com/ggerganov/whisper.cpp/releases](https://github.com/ggerganov/whisper.cpp/releases) and find the newest release at the top.
+2. Under **Assets**, click the zip that matches your hardware:
+   - NVIDIA GPU: `whisper-cublas-<version>-bin-x64.zip` (larger — includes CUDA DLLs)
+   - Anything else: `whisper-blas-bin-x64.zip` (CPU only)
+
+**4b. Extract it into PAM's whisper folder:**
+1. In File Explorer, inside the PAM folder, create a new folder named `whisper`.
+2. Open the zip you downloaded. Select everything inside (it'll be a bunch of `.exe` and `.dll` files — if they're inside a folder called `Release`, open that first) and drag them into `whisper\`.
+
+You should now see `whisper-server.exe` directly inside `whisper\` alongside a bunch of DLLs.
+
+**4c. Download the speech model:**
+1. Inside `whisper\`, create a subfolder named `models`.
+2. Download [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~500 MB) and save it into `whisper\models\`.
+
+Final layout check — inside your PAM folder you should have:
 ```
-.\scripts\install_whisper.ps1
+whisper\
+├── whisper-server.exe
+├── (various .dll files)
+└── models\
+    └── ggml-large-v3-turbo-q5_0.bin
 ```
-This downloads and builds the voice engine and fetches the speech model. 2–10 minutes.
 
 ### 5. Start PAM
 
