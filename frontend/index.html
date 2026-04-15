@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAM</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📋</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/pam.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ═══ MOBILE HEADER ═══ -->
+    <div class="mobile-header">
+      <img src="/img/pam3.png" alt="PAM" class="pam-avatar pam-avatar-sm">
+      <span class="brand-name">PAM</span>
+      <div class="whisper-badge" id="whisperStatusMobile">
+        <span class="status-dot" id="statusDotMobile"></span>
+      </div>
+    </div>
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="/img/pam3.png" alt="PAM" class="pam-avatar" title="PAM">
+        <span class="brand-name">PAM</span>
+      </div>
+      <nav>
+        <a class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </a>
+        <a class="nav-item" data-section="voice" onclick="showSection('voice')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          Voice
+        </a>
+        <a class="nav-item" data-section="habits" onclick="showSection('habits')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg>
+          Habits
+        </a>
+        <a class="nav-item" data-section="todos" onclick="showSection('todos')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          To-Dos
+        </a>
+        <a class="nav-item" data-section="notes" onclick="showSection('notes')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Notes
+        </a>
+        <a class="nav-item" data-section="projects" onclick="showSection('projects')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+          Projects
+        </a>
+        <a class="nav-item" data-section="accomplishments" onclick="showSection('accomplishments')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          Wins
+        </a>
+        <a class="nav-item" data-section="tasks" onclick="showSection('tasks')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          PAM Tasks
+        </a>
+        <a class="nav-item" data-section="calendar" onclick="showSection('calendar')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </a>
+        <a class="nav-item" data-section="gratitude" onclick="showSection('gratitude')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          Gratitude
+        </a>
+        <a class="nav-item" data-section="prompt-zone" onclick="showSection('prompt-zone')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Prompt Zone
+        </a>
+        <a class="nav-item" data-section="settings" onclick="showSection('settings')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="pam-presence" id="pamPresence" title="Click to cycle">
+          <img src="/img/pam2.png" alt="PAM" class="pam-presence-img" id="pamPresenceImg">
+          <div class="pam-presence-overlay">
+            <div class="pam-presence-status">
+              <span class="pam-presence-dot"></span>
+              <span id="pamPresenceText">On duty</span>
+            </div>
+            <div class="pam-presence-time" id="pamPresenceTime">—</div>
+          </div>
+        </div>
+        <div class="whisper-badge" id="whisperStatus">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Whisper</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN ═══ -->
+    <main>
+      <header class="topbar">
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <p class="topbar-sub" id="pageSub">Overview of your tasks and to-dos</p>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <!-- ═══ DASHBOARD ═══ -->
+        <div class="page" id="page-dashboard">
+          <!-- Quick Links -->
+          <div class="quicklinks">
+            <a href="https://mail.google.com" target="_blank" rel="noopener" class="quicklink quicklink-gmail">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Gmail
+            </a>
+            <a href="https://calendar.google.com" target="_blank" rel="noopener" class="quicklink quicklink-gcal">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Google Calendar
+            </a>
+          </div>
+
+          <!-- Daily Briefing -->
+          <div class="card briefing-card" id="briefingCard">
+            <div class="card-header">
+              <h2>Daily Briefing</h2>
+              <div style="display:flex;gap:0.4rem;align-items:center;">
+                <span class="briefing-time" id="briefingTime"></span>
+                <button class="btn-secondary" id="briefingRefreshBtn" title="Refresh">Refresh</button>
+              </div>
+            </div>
+            <div id="briefingContent">
+              <p class="empty">Loading briefing...</p>
+            </div>
+          </div>
+
+          <!-- Habits Widget -->
+          <div class="card" id="habitsWidgetCard">
+            <div class="card-header">
+              <h2>Habits</h2>
+              <div style="display:flex;gap:0.5rem;align-items:center">
+                <span class="badge habit-badge" id="habitProgress" style="display:none">0/0</span>
+                <button class="btn-text" onclick="showSection('habits')">View all</button>
+              </div>
+            </div>
+            <div class="habits-widget" id="habitsWidget">
+              <p class="empty">No habits yet.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- To-Do -->
+            <div class="card">
+              <div class="card-header">
+                <h2>To-Do List</h2>
+                <div style="display:flex;gap:0.5rem;align-items:center">
+                  <button class="btn-text" id="todoShowDone" style="display:none">Show done</button>
+                  <button class="btn-text" onclick="showSection('todos')">View all</button>
+                </div>
+              </div>
+              <div class="input-row">
+                <input type="text" id="todoInput" placeholder="Add a reminder..." autocomplete="off">
+                <button class="btn-primary" id="todoAddBtn">Add</button>
+              </div>
+              <div class="todo-list" id="todoList">
+                <p class="empty">Nothing here yet.</p>
+              </div>
+            </div>
+
+            <!-- Needs Your Attention -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Needs Your Attention</h2>
+                <span class="badge" id="needsOkCount" style="display:none">0</span>
+              </div>
+              <div id="pamQuestionsList"></div>
+              <div id="needsOkList"></div>
+              <div id="attentionEmpty"><p class="empty">All clear.</p></div>
+            </div>
+          </div>
+
+          <!-- Active Tasks -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Active Tasks</h2>
+            </div>
+            <div id="activeTaskList">
+              <p class="empty">No active tasks.</p>
+            </div>
+          </div>
+
+          <!-- Recent Wins -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Recent Wins</h2>
+              <button class="btn-text" onclick="showSection('accomplishments')">View all</button>
+            </div>
+            <div id="dashboardWinsList">
+              <p class="empty">Quiet on the wire.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ VOICE ═══ -->
+        <div class="page hidden" id="page-voice">
+          <div class="board-tabs" id="voiceTabs">
+            <button class="board-tab active" onclick="showVoiceTab('record')">Record</button>
+            <button class="board-tab" onclick="showVoiceTab('history')">History</button>
+          </div>
+
+          <!-- Record sub-view -->
+          <div id="voiceRecordView">
+            <div class="card">
+              <div class="card-header"><h2>Record</h2></div>
+              <div class="recorder">
+                <button class="record-btn" id="recordBtn" title="Click to record">
+                  <svg id="micIcon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                  </svg>
+                  <svg id="stopIcon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor" style="display:none">
+                    <rect x="6" y="6" width="12" height="12" rx="2"/>
+                  </svg>
+                </button>
+                <div class="record-label" id="recordLabel">Click to record</div>
+                <div class="timer" id="timer" style="display:none">00:00</div>
+                <div class="waveform" id="waveform" style="display:none">
+                  <canvas id="waveCanvas" width="300" height="40"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h2>Upload Audio</h2></div>
+              <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.m4a,.ogg,.webm,.flac" hidden>
+                <p>Drop an audio file here or <button class="link-btn" id="browseBtn">browse</button></p>
+                <p class="hint">WAV, MP3, M4A, OGG, WebM, FLAC</p>
+              </div>
+            </div>
+
+            <div class="processing" id="processing" style="display:none">
+              <div class="spinner"></div>
+              <span>Transcribing...</span>
+            </div>
+
+            <div class="card hidden" id="resultCard">
+              <div class="card-header">
+                <h2>Transcription</h2>
+                <div class="result-meta">
+                  <span class="duration" id="duration"></span>
+                  <button class="btn-icon" id="copyBtn" title="Copy">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="result-text" id="resultText"></div>
+              <div class="result-actions">
+                <button class="btn-secondary" id="sendToTodoBtn">Add as To-Do</button>
+                <button class="btn-secondary" id="sendToTaskBtn">Send as PAM Task</button>
+                <button class="btn-secondary" id="sendToNoteBtn">Add Note</button>
+                <button class="btn-secondary" id="sendToWinBtn">Log as Win</button>
+              </div>
+            </div>
+
+            <div class="error-box" id="error" style="display:none">
+              <p id="errorText"></p>
+            </div>
+
+            <div class="card" id="voiceRecentCard">
+              <div class="card-header">
+                <h2>Recent Transcriptions</h2>
+                <button class="btn-text" onclick="showVoiceTab('history')">View all</button>
+              </div>
+              <div class="voice-history-list" id="voiceRecentList">
+                <p class="empty">No transcriptions yet.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- History sub-view -->
+          <div id="voiceHistoryView" style="display:none">
+            <div class="card">
+              <div class="card-header">
+                <h2>All Transcriptions</h2>
+                <span class="badge" id="voiceHistoryCount" style="display:none">0</span>
+              </div>
+              <div class="voice-history-list" id="voiceHistoryList">
+                <p class="empty">No transcriptions yet.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TASKS ═══ -->
+        <div class="page hidden" id="page-tasks">
+          <div class="card">
+            <div class="card-header"><h2>Submit a Task</h2></div>
+            <p class="card-desc">Give PAM or Claude something to act on. Auto-routed to projects.</p>
+            <div class="input-row">
+              <input type="text" id="taskInput" placeholder="Give PAM a task..." autocomplete="off">
+              <button class="btn-primary" id="taskSubmitBtn">Submit</button>
+            </div>
+            <div class="task-meta-hint" id="taskInputMeta"></div>
+          </div>
+
+          <div class="card" id="needsOkSectionFull" style="display:none">
+            <div class="card-header">
+              <h2>Needs Your OK</h2>
+              <span class="badge" id="needsOkCountFull">0</span>
+            </div>
+            <div id="needsOkListFull"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2>All Tasks</h2></div>
+            <div id="allTaskList">
+              <p class="empty">No tasks.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ PROJECTS (KANBAN) ═══ -->
+        <div class="page hidden" id="page-projects">
+          <div class="board-tabs" id="boardTabs">
+            <button class="board-tab active" onclick="loadBoard('tech')">Tech</button>
+            <button class="board-tab" onclick="loadBoard('house')">House</button>
+            <button class="board-tab" onclick="loadBoard('gamedev')">Game Dev</button>
+            <button class="board-tab" onclick="loadBoard('personal')">Personal</button>
+          </div>
+          <div class="kanban-board" id="kanbanBoard">
+            <p class="empty">Select a board above.</p>
+          </div>
+        </div>
+
+        <!-- ═══ CALENDAR ═══ -->
+        <div class="page hidden" id="page-calendar">
+          <!-- Smart Input -->
+          <div class="card">
+            <div class="card-header"><h2>Add Event</h2></div>
+            <p class="card-desc">Type naturally, upload an appointment card, or enter details manually.</p>
+            <textarea id="calSmartInput" rows="2" placeholder='e.g. "Dentist next Tuesday at 2pm for an hour" or "Team lunch Friday noon at Olive Garden"'></textarea>
+            <div style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn-primary" id="calParseBtn">Parse Event</button>
+              <label class="btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                Upload Image
+                <input type="file" id="calImageInput" accept="image/*" capture="environment" hidden>
+              </label>
+              <button class="btn-text" id="calManualToggle">Manual entry</button>
+            </div>
+          </div>
+
+          <!-- Manual Entry (hidden by default) -->
+          <div class="card" id="calManualCard" style="display:none">
+            <div class="card-header"><h2>Manual Entry</h2></div>
+            <input type="text" id="calSummary" placeholder="Event title" autocomplete="off" style="width:100%;margin-bottom:0.5rem">
+            <div class="input-row" style="margin-bottom:0.5rem">
+              <input type="datetime-local" id="calStart" class="flex-1">
+              <input type="datetime-local" id="calEnd" class="flex-1">
+            </div>
+            <input type="text" id="calAttendees" placeholder="Attendees (comma-separated emails)" autocomplete="off" style="width:100%;margin-bottom:0.5rem">
+            <input type="text" id="calLocation" placeholder="Location (optional)" autocomplete="off" style="width:100%;margin-bottom:0.5rem">
+            <textarea id="calDescription" rows="2" placeholder="Description (optional)"></textarea>
+            <div style="margin-top:0.75rem;display:flex;gap:0.5rem">
+              <button class="btn-primary" id="calCreateBtn">Create Event</button>
+              <button class="btn-secondary" id="calHoldBtn">Calendar Hold</button>
+            </div>
+          </div>
+
+          <!-- Preview (shown after parse) -->
+          <div class="card cal-preview-card" id="calPreviewCard" style="display:none">
+            <div class="card-header"><h2>Preview</h2></div>
+            <div class="cal-preview-fields">
+              <div class="cal-preview-row"><label>Title</label><input type="text" id="calPreviewTitle"></div>
+              <div class="cal-preview-row"><label>Start</label><input type="datetime-local" id="calPreviewStart"></div>
+              <div class="cal-preview-row"><label>End</label><input type="datetime-local" id="calPreviewEnd"></div>
+              <div class="cal-preview-row"><label>Location</label><input type="text" id="calPreviewLocation"></div>
+              <div class="cal-preview-row"><label>Attendees</label><input type="text" id="calPreviewAttendees" placeholder="Comma-separated emails"></div>
+              <div class="cal-preview-row"><label>Description</label><input type="text" id="calPreviewDesc"></div>
+            </div>
+            <div style="margin-top:0.75rem;display:flex;gap:0.5rem">
+              <button class="btn-primary" id="calConfirmBtn">Create Event</button>
+              <button class="btn-secondary" id="calPreviewHoldBtn">As Hold</button>
+              <button class="btn-text" id="calPreviewCancel">Cancel</button>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Upcoming Events -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Upcoming Events</h2>
+                <button class="btn-text" id="calRefreshBtn">Refresh</button>
+              </div>
+              <div id="calEventsList">
+                <p class="empty">No upcoming events.</p>
+              </div>
+            </div>
+
+            <!-- Contacts -->
+            <div class="card">
+              <div class="card-header">
+                <h2>Contacts</h2>
+              </div>
+              <p class="card-desc">Click a contact to add them to the attendees field.</p>
+              <div id="contactsList"></div>
+              <div class="input-row" style="margin-top:0.75rem">
+                <input type="text" id="contactName" placeholder="Name" autocomplete="off">
+                <input type="text" id="contactEmail" placeholder="Email" autocomplete="off" class="flex-1">
+                <button class="btn-primary" id="contactAddBtn">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ ACCOMPLISHMENTS / WINS ═══ -->
+        <div class="page hidden" id="page-accomplishments">
+          <div class="card">
+            <div class="card-header">
+              <h2>Wins</h2>
+              <span class="badge" id="winsWeekCount" style="display:none">0</span>
+            </div>
+            <p class="card-desc">Things you've done. Auto-captured from to-dos, questions, and tasks — plus anything you log here.</p>
+            <div class="filter-chips" id="winsFilters">
+              <button class="chip active" data-source="all">All</button>
+              <button class="chip" data-source="todo">To-Do</button>
+              <button class="chip" data-source="question">Question</button>
+              <button class="chip" data-source="task">Task</button>
+              <button class="chip" data-source="manual">Manual</button>
+            </div>
+            <div class="input-row" style="margin-top:0.75rem">
+              <input type="text" id="winInput" placeholder="Log something you accomplished..." autocomplete="off">
+              <button class="btn-primary" id="winAddBtn">Add</button>
+            </div>
+            <div class="wins-list" id="winsList" style="margin-top:1rem">
+              <p class="empty">Nothing logged yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SETTINGS ═══ -->
+        <div class="page hidden" id="page-settings">
+          <div class="card settings-card">
+            <div class="card-header"><h2>Scheduling</h2></div>
+            <p class="card-desc">When PAM's automated jobs run. Changes take effect on the next daily cycle.</p>
+            <div class="settings-grid">
+              <label class="settings-row">
+                <span class="settings-label">Briefing email hour</span>
+                <input type="number" min="0" max="23" class="settings-input" data-setting="briefing_hour">
+                <span class="settings-hint">0–23 (local time)</span>
+              </label>
+              <label class="settings-row">
+                <span class="settings-label">Mid-day check-in hour</span>
+                <input type="number" min="0" max="23" class="settings-input" data-setting="checkin_hour">
+                <span class="settings-hint">0–23 (local time)</span>
+              </label>
+              <label class="settings-row">
+                <span class="settings-label">Habit reset hour</span>
+                <input type="number" min="0" max="23" class="settings-input" data-setting="habit_reset_hour">
+                <span class="settings-hint">When today's habits roll over</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card settings-card">
+            <div class="card-header"><h2>Notifications</h2></div>
+            <p class="card-desc">Where PAM's emails and calendar events are addressed.</p>
+            <div class="settings-grid">
+              <label class="settings-row">
+                <span class="settings-label">Timezone</span>
+                <input type="text" class="settings-input" data-setting="timezone" placeholder="America/New_York">
+                <span class="settings-hint">IANA name, e.g. America/Los_Angeles</span>
+              </label>
+              <label class="settings-row">
+                <span class="settings-label">Briefing email recipient</span>
+                <input type="email" class="settings-input" data-setting="briefing_email_recipient" placeholder="fallback: credentials file">
+                <span class="settings-hint">Leave blank to use credentials default</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card settings-card">
+            <div class="card-header"><h2>UI &amp; Audio</h2></div>
+            <p class="card-desc">Sound effects fire on toggles, saves, and wins.</p>
+            <div class="settings-grid">
+              <label class="settings-row">
+                <span class="settings-label">Sound effects</span>
+                <input type="checkbox" class="settings-input settings-toggle" data-setting="sfx_enabled">
+                <span class="settings-hint">Master enable</span>
+              </label>
+              <label class="settings-row">
+                <span class="settings-label">Volume</span>
+                <input type="range" min="0" max="1" step="0.05" class="settings-input settings-range" data-setting="sfx_volume">
+                <span class="settings-hint" id="sfxVolumeLabel">60%</span>
+              </label>
+            </div>
+          </div>
+
+          <p class="settings-status" id="settingsStatus"></p>
+        </div>
+
+        <!-- ═══ PROMPT ZONE ═══ -->
+        <div class="page hidden" id="page-prompt-zone">
+          <div class="card" id="goldenPromptsCard">
+            <div class="card-header">
+              <h2>Golden Prompts</h2>
+              <span class="badge golden-badge" id="goldenCount" style="display:none">0</span>
+            </div>
+            <div class="golden-tiles" id="goldenTiles">
+              <p class="empty">No golden prompts yet. Star a prompt to make it golden.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2>Add Prompt</h2></div>
+            <div class="pz-add-form">
+              <input type="text" id="pzTitleInput" placeholder="Title (e.g. Code Review)" autocomplete="off">
+              <textarea id="pzPromptInput" rows="3" placeholder="Prompt text..."></textarea>
+              <div class="pz-add-actions">
+                <label class="pz-golden-toggle" title="Star to make it a golden prompt">
+                  <input type="checkbox" id="pzGoldenInput">
+                  <span class="pz-star">&#9734;</span>
+                  <span class="pz-star-label">Golden</span>
+                </label>
+                <button class="btn-primary" id="pzSaveBtn">Save</button>
+                <button class="btn-secondary pz-cancel-btn" id="pzCancelBtn">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>All Prompts</h2>
+              <span class="badge" id="pzTotalCount" style="display:none">0</span>
+            </div>
+            <div id="pzList" style="margin-top:0.5rem">
+              <p class="empty">No prompts saved yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TO-DOS ═══ -->
+        <div class="page hidden" id="page-todos">
+          <div class="card">
+            <div class="card-header">
+              <h2>To-Dos</h2>
+            </div>
+            <div class="input-row" style="margin-bottom:0.75rem">
+              <input type="text" id="todoCategoryInput" placeholder="New category name..." autocomplete="off">
+              <button class="btn-secondary" id="todoCategoryAddBtn">+ Category</button>
+            </div>
+            <div id="todoCategoryList">
+              <p class="empty">Loading...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ NOTES ═══ -->
+        <div class="page hidden" id="page-notes">
+          <!-- Note list view -->
+          <div id="notesListView">
+            <div class="notes-header">
+              <button class="btn-primary" id="newNoteBtn">New Note</button>
+            </div>
+            <div class="notes-columns">
+              <div class="notes-col notes-col-main">
+                <h3>Notes</h3>
+                <div id="notesList">
+                  <p class="empty">No notes yet.</p>
+                </div>
+              </div>
+              <div class="notes-col notes-col-pinned">
+                <h3>Pinned</h3>
+                <div id="pinnedNotesList">
+                  <p class="empty">No pinned notes.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Note editor view -->
+          <div id="noteEditorView" style="display:none">
+            <div class="card">
+              <div class="card-header">
+                <button class="btn-text" id="noteBackBtn">&larr; Back</button>
+                <div class="note-editor-actions">
+                  <button class="btn-secondary" id="notePinBtn">Pin</button>
+                  <button class="btn-secondary enhance-btn" id="noteEnhanceBtn" style="display:none">Enhance</button>
+                  <button class="btn-primary" id="noteSaveBtn">Save</button>
+                  <button class="btn-secondary btn-danger" id="noteDeleteBtn">Delete</button>
+                </div>
+              </div>
+              <input type="text" id="noteTitleInput" placeholder="Note title..." class="note-title-input">
+              <div class="note-tabs" id="noteTabs" style="display:none">
+                <button class="note-tab active" id="tabRaw" onclick="switchNoteTab('raw')">Raw</button>
+                <button class="note-tab" id="tabEnhanced" onclick="switchNoteTab('enhanced')">Enhanced</button>
+              </div>
+              <textarea id="noteContentInput" rows="12" placeholder="Write your note..."></textarea>
+              <div id="noteEnhancedView" class="note-enhanced-view" style="display:none">
+                <div class="stale-banner" id="staleBanner" style="display:none">
+                  Content has changed since last enhancement. <button class="btn-text" onclick="enhanceCurrentNote()">Re-enhance</button>
+                </div>
+                <div class="answers-banner" id="answersBanner" style="display:none">
+                  <span id="answersBannerText"></span> <button class="btn-text" onclick="enhanceCurrentNote()">Re-enhance</button>
+                </div>
+                <div id="noteEnhancedContent"></div>
+              </div>
+              <div class="note-editor-meta" id="noteEditorMeta"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ HABITS ═══ -->
+        <div class="page hidden" id="page-habits">
+          <div class="card">
+            <div class="card-header">
+              <h2>Today's Habits</h2>
+              <span class="badge habit-badge" id="habitPageProgress" style="display:none">0/0</span>
+            </div>
+            <div class="habits-progress-bar" id="habitsProgressBar">
+              <div class="habits-progress-fill" id="habitsProgressFill"></div>
+            </div>
+            <div class="habits-list" id="habitsPageList">
+              <p class="empty">No habits yet. Add your first one below.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2>Add Habit</h2></div>
+            <div class="input-row">
+              <input type="text" id="habitInput" placeholder="e.g. Work out, Read, Play music..." autocomplete="off">
+              <select id="habitRecurrence" class="habit-select">
+                <option value="daily">Daily</option>
+                <option value="weekdays">Weekdays</option>
+                <option value="MWF">MWF</option>
+                <option value="TTh">TTh</option>
+                <option value="weekly">Weekly</option>
+              </select>
+              <button class="btn-primary" id="habitAddBtn">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ GRATITUDE ═══ -->
+        <div class="page hidden" id="page-gratitude">
+          <div class="gratitude-tiles" id="gratitudeTiles">
+            <p class="empty">Loading gratitude tiles...</p>
+          </div>
+          <div style="margin-top: 1rem;">
+            <button class="btn-primary" id="addGratitudeTileBtn">+ Add Tile</button>
+          </div>
+          <div class="card" id="addGratitudeForm" style="display:none; margin-top:1rem;">
+            <div class="card-header"><h2>New Gratitude Tile</h2></div>
+            <div class="input-row" style="flex-direction:column; gap:0.5rem;">
+              <input type="text" id="gratitudeTitleInput" placeholder="Title (e.g. Family, Nature, Music...)" autocomplete="off">
+              <textarea id="gratitudeBodyInput" rows="3" placeholder="Why are you grateful for this?"></textarea>
+              <div class="input-row">
+                <input type="text" id="gratitudeIconInput" placeholder="Icon (emoji)" style="width:80px;">
+                <select id="gratitudeColorSelect" class="habit-select">
+                  <option value="rgba(232, 143, 143, 0.3)">Rose</option>
+                  <option value="rgba(143, 232, 166, 0.3)">Sage</option>
+                  <option value="rgba(143, 186, 232, 0.3)">Sky</option>
+                  <option value="rgba(200, 175, 232, 0.3)">Lavender</option>
+                  <option value="rgba(232, 206, 143, 0.3)">Gold</option>
+                  <option value="rgba(143, 220, 232, 0.3)">Aqua</option>
+                  <option value="rgba(232, 183, 106, 0.3)">Amber</option>
+                </select>
+                <button class="btn-primary" id="gratitudeSaveBtn">Save</button>
+                <button class="btn-secondary" id="gratitudeCancelBtn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ═══ MOBILE BOTTOM NAV ═══ -->
+    <div class="mobile-nav">
+      <nav>
+        <a class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Home
+        </a>
+        <a class="nav-item" data-section="habits" onclick="showSection('habits')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg>
+          Habits
+        </a>
+        <a class="nav-item" data-section="todos" onclick="showSection('todos')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          To-Dos
+        </a>
+        <a class="nav-item" data-section="gratitude" onclick="showSection('gratitude')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          Gratitude
+        </a>
+        <a class="nav-item" data-section="voice" onclick="showSection('voice')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          Voice
+        </a>
+        <a class="nav-item" data-section="notes" onclick="showSection('notes')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Notes
+        </a>
+        <a class="nav-item" data-section="calendar" onclick="showSection('calendar')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </a>
+        <a class="nav-item" data-section="projects" onclick="showSection('projects')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+          Projects
+        </a>
+        <a class="nav-item" data-section="tasks" onclick="showSection('tasks')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          PAM Tasks
+        </a>
+        <a class="nav-item" data-section="accomplishments" onclick="showSection('accomplishments')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          Wins
+        </a>
+        <a class="nav-item" data-section="prompt-zone" onclick="showSection('prompt-zone')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Prompts
+        </a>
+        <a class="nav-item" data-section="settings" onclick="showSection('settings')">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  <script src="/static/pam.js"></script>
+</body>
+</html>

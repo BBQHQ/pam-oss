@@ -1,0 +1,15 @@
+[Unit]
+Description=PAM — Personal Assistant Manager
+After=network.target
+
+[Service]
+Type=simple
+User=REPLACE_WITH_YOUR_USER
+WorkingDirectory=/path/to/pam
+Environment="PATH=/path/to/pam/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/path/to/pam/.venv/bin/python -m app.main
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
