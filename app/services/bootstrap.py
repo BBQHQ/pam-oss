@@ -126,29 +126,25 @@ async def seed_starter_data():
     db_path = DATA_DIR / "notes.db"
     now = datetime.now().isoformat()
 
+    # Seed todos via the todos service so the schema stays a single source of
+    # truth (todos.py owns `CREATE TABLE todos`, including the `position`
+    # column and FK constraints).
+    from app.services.todos import _get_db as _todos_db, add_todo
+    todos_db = await _todos_db()
+    try:
+        cur = await todos_db.execute("SELECT COUNT(*) FROM todos")
+        todo_count = (await cur.fetchone())[0]
+    finally:
+        await todos_db.close()
+
+    if todo_count == 0:
+        for text in STARTER_TODOS:
+            await add_todo(text)
+        for text in STARTER_HABITS:
+            await add_todo(text, recurrence="daily")
+        print(f"[PAM] Seeded {len(STARTER_TODOS)} starter todos + {len(STARTER_HABITS)} starter habits")
+
     async with aiosqlite.connect(str(db_path)) as db:
-        # Let service modules create their tables first. These CREATE TABLE
-        # statements mirror what the services declare, so running this before
-        # the services have ever been imported is still safe.
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS todos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                text TEXT NOT NULL,
-                done INTEGER NOT NULL DEFAULT 0,
-                created TEXT NOT NULL,
-                completed TEXT,
-                category TEXT,
-                parent_id INTEGER,
-                recurrence TEXT,
-                recurrence_days TEXT,
-                streak_current INTEGER DEFAULT 0,
-                streak_best INTEGER DEFAULT 0,
-                last_reset TEXT,
-                completion_count INTEGER DEFAULT 0,
-                week_count INTEGER DEFAULT 0,
-                last_week TEXT
-            )
-        """)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS kanban_boards (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -170,23 +166,8 @@ async def seed_starter_data():
         """)
         await db.commit()
 
-        cursor = await db.execute("SELECT COUNT(*) FROM todos")
-        todo_count = (await cursor.fetchone())[0]
         cursor = await db.execute("SELECT COUNT(*) FROM kanban_cards")
         card_count = (await cursor.fetchone())[0]
-
-        if todo_count == 0:
-            for text in STARTER_TODOS:
-                await db.execute(
-                    "INSERT INTO todos (text, created) VALUES (?, ?)",
-                    (text, now),
-                )
-            for text in STARTER_HABITS:
-                await db.execute(
-                    "INSERT INTO todos (text, created, recurrence) VALUES (?, ?, 'daily')",
-                    (text, now),
-                )
-            print(f"[PAM] Seeded {len(STARTER_TODOS)} starter todos + {len(STARTER_HABITS)} starter habits")
 
         if card_count == 0:
             cursor = await db.execute(
