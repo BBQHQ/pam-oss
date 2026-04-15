@@ -43,6 +43,8 @@ Required:
 - **Python 3.11+**
 - **git** — used by the Whisper installer to fetch whisper.cpp. You can download PAM itself as a ZIP if you prefer, but Git still needs to be installed for step 2.
 - **ffmpeg** on `PATH`
+- **CMake** on `PATH` — used to build whisper.cpp.
+- **C/C++ compiler toolchain** — Visual Studio Build Tools (Windows, "Desktop development with C++" workload), Xcode Command Line Tools (macOS), or `build-essential` (Linux).
 - **Claude subscription + Claude Code CLI** — the AI brain. Install from https://docs.claude.com/claude-code, then run `claude` once to authenticate.
 
 Optional (each integration self-disables cleanly if missing):
@@ -219,6 +221,7 @@ Full layout and contributing guide: see [`CLAUDE.md`](CLAUDE.md) and [`CONTRIBUT
 
 - **Mic button greyed out** — your browser needs HTTPS on a non-localhost origin. PAM's auto-generated cert should handle this; if not, run `./scripts/generate_cert.sh`.
 - **"Whisper binary not found"** — run `./scripts/install_whisper.sh`. The first run takes a while to build + download the model.
+- **`cmake is not recognized` / `'cl' is not recognized` when running the Whisper installer** — you're missing CMake and/or the Visual Studio C++ build tools. Install both (see Prerequisites), **close and reopen your terminal** so PATH updates, then re-run the installer.
 - **Briefing returns empty / no AI** — check `claude --print -p "hi"` on the host. If it fails, the CLI isn't set up.
 - **`GET /health`** returns per-integration status — use this to diagnose what's wired and what isn't.
 
@@ -235,7 +238,9 @@ Install each of these with their default settings unless noted:
 1. **Python 3.11 or newer** — [python.org/downloads](https://www.python.org/downloads/). **Important:** on the first installer screen, check the box **"Add Python to PATH"** before clicking Install.
 2. **Git** — [git-scm.com/downloads](https://git-scm.com/downloads). Accept all defaults. (You don't have to use Git yourself, but PAM's voice-transcription installer uses it behind the scenes.)
 3. **ffmpeg** — grab a Windows build from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (the "release essentials" zip). Unzip it to `C:\ffmpeg`, then add `C:\ffmpeg\bin` to your system PATH. (Start menu → "Edit the system environment variables" → **Environment Variables** → under **System variables** pick **Path** → **Edit** → **New** → paste `C:\ffmpeg\bin` → OK everything.)
-4. **Claude Code CLI** — follow [docs.claude.com/claude-code](https://docs.claude.com/claude-code). After installing, open PowerShell, type `claude`, and sign in with your Claude subscription.
+4. **CMake** — [cmake.org/download](https://cmake.org/download/). Grab the "Windows x64 Installer" (.msi). During setup, choose **"Add CMake to the system PATH for all users"**. This is used to build the Whisper voice engine.
+5. **Visual Studio Build Tools** — [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/) → scroll down to **"Tools for Visual Studio"** → **"Build Tools for Visual Studio"**. In the installer, check the **"Desktop development with C++"** workload and click Install. ~5–7 GB. This provides the C++ compiler that CMake needs.
+6. **Claude Code CLI** — follow [docs.claude.com/claude-code](https://docs.claude.com/claude-code). After installing, open PowerShell, type `claude`, and sign in with your Claude subscription.
 
 Close and reopen any open terminals after installing so the PATH changes take effect.
 
