@@ -689,6 +689,7 @@ async function startRecording() {
     mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
       stopVisualizer();
+      if (pttAbort) { pttAbort = false; return; }
       const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
       await sendAudio(blob, 'recording.webm');
     };
@@ -722,6 +723,44 @@ function stopRecording() {
     timer.style.display = 'none'; waveform.style.display = 'none';
   }
 }
+
+// ─── Push-to-talk (hold backtick) ──────────────────
+const PTT_KEY = '`';
+const PTT_MIN_HOLD_MS = 200;
+let pttActive = false;
+let pttStartTime = 0;
+let pttAbort = false;
+
+document.addEventListener('keydown', async (e) => {
+  if (e.key === 'Escape' && pttActive) {
+    pttAbort = true;
+    pttActive = false;
+    stopRecording();
+    playSFX('delete');
+    return;
+  }
+  if (e.key !== PTT_KEY || e.repeat || pttActive) return;
+  const t = e.target;
+  if (t.matches && t.matches('input, textarea, [contenteditable="true"]')) return;
+  e.preventDefault();
+  pttActive = true;
+  pttAbort = false;
+  pttStartTime = Date.now();
+  playSFX('utility');
+  await startRecording();
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.key !== PTT_KEY || !pttActive) return;
+  pttActive = false;
+  if (Date.now() - pttStartTime < PTT_MIN_HOLD_MS) {
+    pttAbort = true;
+    playSFX('delete');
+  } else {
+    playSFX('utility');
+  }
+  stopRecording();
+});
 
 function getSupportedMime() {
   for (const t of ['audio/webm;codecs=opus','audio/webm','audio/ogg','audio/mp4'])

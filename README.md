@@ -107,6 +107,14 @@ Override the model:
 WHISPER_MODEL=ggml-base.en-q5_0.bin ./scripts/install_whisper.sh
 ```
 
+> **macOS / Linux note — manual builds.** The install script copies the built binary to `whisper/whisper-server`, which is where PAM looks for it. If you build whisper.cpp by hand (e.g., `cmake` directly in a checkout you placed under `whisper/`), the binary lands at `whisper/build/bin/whisper-server` instead and PAM won't find it. Either re-run the script from a clean `whisper/` directory, or symlink the existing binary into place **from the PAM project root** so the relative target resolves correctly:
+> ```bash
+> ln -s build/bin/whisper-server whisper/whisper-server
+> ```
+> Running that command from inside `whisper/` (or with `whisper/build/bin/whisper-server` as the target) creates a dangling symlink — target paths are resolved relative to the symlink's own directory, not your shell's.
+>
+> Also: whatever you set `WHISPER_MODEL` to (in `.env` or your shell environment) must match the model filename **exactly**. `ggml-base.en.bin` and `ggml-base.en-q5_0.bin` are different files; a typo here surfaces as the same "model not found" error as a missing download.
+
 ### 3. Run
 
 ```bash
@@ -250,10 +258,98 @@ Full layout and contributing guide: see [`CLAUDE.md`](CLAUDE.md) and [`CONTRIBUT
 ## Troubleshooting
 
 - **Mic button greyed out** — your browser needs HTTPS on a non-localhost origin. PAM's auto-generated cert should handle this; if not, run `./scripts/generate_cert.sh`.
-- **"Whisper binary not found"** — make sure `whisper-server.exe` sits directly inside the `whisper\` folder (not in a `Release\` subfolder) and that the model file is at `whisper\models\<model-name>.bin`. See step 2 of the install for the expected layout.
+- **"Whisper binary not found"** — the binary must sit directly inside the `whisper/` folder.
+  - **Windows:** `whisper\whisper-server.exe` (not inside a `Release\` subfolder — move it up one level if needed).
+  - **macOS / Linux:** `whisper/whisper-server`. If you built whisper.cpp manually, it's likely at `whisper/build/bin/whisper-server` — symlink it into place from the PAM project root: `ln -s build/bin/whisper-server whisper/whisper-server`. Symlink targets are relative to the symlink's directory, so running that `ln` from the wrong directory produces a dangling symlink.
+  - Also verify the model file exists at `whisper/models/<model-name>.bin` and that `WHISPER_MODEL` (in `.env` or your shell environment) matches the filename on disk **exactly** — one missing hyphen or suffix yields the same error.
 - **`cmake is not recognized` / `'cl' is not recognized` when running `install_whisper.ps1`** — you're trying to build from source without the toolchain. On Windows, use the pre-built binary path (step 2, Option A) instead — no compiler needed.
 - **Briefing returns empty / no AI** — check `claude --print -p "hi"` on the host. If it fails, the CLI isn't set up.
 - **`GET /health`** returns per-integration status — use this to diagnose what's wired and what isn't.
+
+---
+
+### Voice (Push-to-talk)
+
+Hold a single key anywhere in the PAM browser tab to record a voice note. When
+you release the key, PAM transcribes it via whisper and:
+
+- Shows the transcript in the voice panel's result card, with a **Copy** button
+  to put it on your clipboard on demand.
+- Logs it to the voice history (`voice_log` table in SQLite).
+- Offers **Add as To-Do** and **Send as PAM Task** buttons next to the
+  transcript for one-click routing.
+
+#### How to use it
+
+1. Open PAM in your browser (e.g., `https://localhost:8400`). Accept the
+   self-signed certificate the first time.
+2. Grant the browser microphone permission when prompted. This only needs to
+   happen once per browser profile.
+3. **Hold down the backtick key** — the `` ` `` key, typically just above
+   Tab on US keyboards, sharing a key with `~`.
+4. Speak while holding the key. You'll hear a short sound effect confirming
+   recording has started, and the voice panel's waveform animates.
+5. **Release the key** to stop recording. A second sound effect plays, PAM
+   sends the audio to whisper, and the transcript appears in the voice panel's
+   result card.
+6. Click **Copy** on the result card to put the transcript on your clipboard,
+   then paste (`Cmd+V` / `Ctrl+V`) anywhere. Or use **Add as To-Do** /
+   **Send as PAM Task** to route it without leaving PAM.
+7. **Oops, didn't mean to start?** Press **Escape** while still holding
+   backtick to cancel — the recording is discarded and nothing is sent to
+   whisper.
+
+#### Tips
+
+- **PTT is tab-local.** It only works while the PAM tab is focused in your
+  browser. Click into the PAM tab before holding backtick. A system-wide PTT
+  would require a native helper app and is intentionally out of scope.
+- **Backtick still types normally in text fields.** If your cursor is in a
+  text input, textarea, or other editable field, pressing backtick will type
+  the character as usual — PTT is suppressed so you don't accidentally start
+  recording while editing a note. Click outside the input first to use PTT.
+- **Hold, don't tap.** PTT is hold-to-talk: release ends the recording.
+  Holds shorter than ~200ms are treated as accidental taps and discarded
+  without being sent to whisper — so a stray finger brush won't queue a
+  useless empty transcription.
+- **Audio feedback is non-visual on purpose.** You hear a confirming sound
+  on start, on successful stop, and a distinct "canceled" sound on abort
+  (escape-cancel or too-short tap). That lets you use PTT without looking
+  at the PAM tab. Turn sounds off via PAM's settings if you prefer silence.
+- **The mic button still works.** Clicking the microphone button in the voice
+  panel behaves exactly as before — click once to start, click again to stop.
+  PTT is an addition, not a replacement.
+- **Clipboard is opt-in.** PAM will not overwrite your clipboard
+  automatically — the transcript only lands there when you click **Copy** on
+  the result card. This keeps anything you already had copied safe.
+
+#### Troubleshooting
+
+**Nothing happens when I hold backtick.**
+
+- Confirm the PAM browser tab is focused (click somewhere on the PAM page
+  first, outside any text input).
+- Confirm you granted microphone permission. Check the site settings
+  (padlock icon in the address bar) if you're not sure.
+- Open devtools → Console and check for errors while holding the key.
+
+**I pressed backtick in a note and it started recording.**
+
+- It shouldn't — PTT is suppressed inside inputs, textareas, and
+  `contenteditable="true"` elements. If you hit a field where it still
+  triggers, that's a bug; file an issue with the element type.
+
+**I held the key briefly and nothing happened.**
+
+- This is by design. Holds shorter than ~200ms are treated as accidental
+  taps. Hold a little longer next time. Minimum hold is tuned via
+  `PTT_MIN_HOLD_MS` in `frontend/pam.js`.
+
+**I want to change the hotkey or the minimum-hold duration.**
+
+- Not exposed as settings yet. The key is defined as `PTT_KEY` and the
+  minimum hold as `PTT_MIN_HOLD_MS` near the top of the voice section in
+  `frontend/pam.js`; edit the values there and reload the page.
 
 ---
 
