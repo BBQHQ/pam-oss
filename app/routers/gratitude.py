@@ -1,15 +1,33 @@
 """Gratitude tile endpoints."""
 
+import time
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.services.gratitude import get_tiles, add_tile, update_tile, delete_tile
+from app.services.gratitude import (
+    add_tile, delete_tile, get_progress_snapshot, get_tiles_shell, update_tile,
+)
 
 router = APIRouter(prefix="/gratitude", tags=["gratitude"])
 
 
 @router.get("/")
 async def list_tiles():
-    return await get_tiles()
+    """Shell only — no progress enrichment. Fetch `/gratitude/progress`
+    after this to fill in progress tile labels."""
+    t0 = time.perf_counter()
+    tiles = await get_tiles_shell()
+    print(f"[gratitude] GET / {(time.perf_counter() - t0) * 1000:.0f}ms ({len(tiles)} tiles)")
+    return tiles
+
+
+@router.get("/progress")
+async def progress_snapshot():
+    """Enrichment data per data_source, 60s cached."""
+    t0 = time.perf_counter()
+    snap = await get_progress_snapshot()
+    print(f"[gratitude] GET /progress {(time.perf_counter() - t0) * 1000:.0f}ms")
+    return snap
 
 
 @router.post("/")

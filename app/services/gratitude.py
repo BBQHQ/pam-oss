@@ -1,10 +1,20 @@
 """Gratitude tiles — pillar (user-curated) and progress (data-enriched)."""
 
+import asyncio
 import json
+import time
 import aiosqlite
 from datetime import datetime, timedelta
 from app.config import DATA_DIR
 from app.models import GratitudeTile
+
+# In-memory TTL cache for progress tile enrichment.
+# Keyed by data_source; value = (expires_at_monotonic, data_dict).
+# Commits enrichment can be slow (gh api fan-out across repos); 60s is long
+# enough to absorb navigation bursts, short enough to feel fresh.
+_PROGRESS_TTL_SEC = 60.0
+_progress_cache: dict[str, tuple[float, dict]] = {}
+_progress_locks: dict[str, asyncio.Lock] = {}
 
 DB_PATH = DATA_DIR / "notes.db"
 
@@ -83,8 +93,12 @@ async def seed_defaults():
         await db.close()
 
 
-async def get_tiles() -> list[dict]:
-    """Return all tiles, progress tiles enriched with live data."""
+async def get_tiles_shell() -> list[dict]:
+    """Return tiles without progress enrichment. Paints fast on the client.
+
+    Progress tiles get `progress_data: None` — the client then fetches
+    `/gratitude/progress` and fills in the labels asynchronously.
+    """
     await seed_defaults()
     db = await _get_db()
     try:
@@ -94,15 +108,76 @@ async def get_tiles() -> list[dict]:
     finally:
         await db.close()
 
-    # Enrich progress tiles
+    for tile in tiles:
+        if tile["category"] == "progress":
+            tile["progress_data"] = None
+    return tiles
+
+
+async def get_progress_snapshot() -> dict[str, dict]:
+    """Return {data_source: enriched_dict} for all active progress tiles.
+
+    Cached for 60s per source so rapid re-navigations don't re-shell-out to
+    `gh api` for commits or re-query SQLite for habits/wins.
+    """
+    db = await _get_db()
+    try:
+        cur = await db.execute(
+            "SELECT DISTINCT data_source FROM gratitude "
+            "WHERE category='progress' AND data_source IS NOT NULL"
+        )
+        sources = [r["data_source"] for r in await cur.fetchall()]
+    finally:
+        await db.close()
+
+    out: dict[str, dict] = {}
+    for src in sources:
+        out[src] = await _enrich_progress(src)
+    return out
+
+
+async def get_tiles() -> list[dict]:
+    """Return all tiles, progress tiles enriched with live data (uses cache).
+
+    Kept for callers that want a fully-hydrated list in one call — briefing
+    uses this via `get_gratitude_summary()`. UI navigates via the
+    shell + progress split.
+    """
+    tiles = await get_tiles_shell()
     for tile in tiles:
         if tile["category"] == "progress" and tile["data_source"]:
             tile["progress_data"] = await _enrich_progress(tile["data_source"])
-
     return tiles
 
 
 async def _enrich_progress(source: str) -> dict:
+    """Cached wrapper around the real enrichment — 60s TTL per source."""
+    now = time.monotonic()
+    hit = _progress_cache.get(source)
+    if hit and hit[0] > now:
+        return hit[1]
+
+    # Single-flight: only one request recomputes per source at a time.
+    lock = _progress_locks.setdefault(source, asyncio.Lock())
+    async with lock:
+        hit = _progress_cache.get(source)
+        if hit and hit[0] > time.monotonic():
+            return hit[1]
+        data = await _compute_progress(source)
+        _progress_cache[source] = (time.monotonic() + _PROGRESS_TTL_SEC, data)
+        return data
+
+
+def invalidate_progress_cache(source: str | None = None) -> None:
+    """Drop cached enrichment so the next call recomputes. Useful after
+    known state changes (todo toggle, win logged) to keep the tile honest."""
+    if source is None:
+        _progress_cache.clear()
+    else:
+        _progress_cache.pop(source, None)
+
+
+async def _compute_progress(source: str) -> dict:
     """Fetch live stats for a progress tile."""
     if source == "commits":
         try:
