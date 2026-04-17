@@ -1808,6 +1808,104 @@ input[type="datetime-local"]:focus { border-color: var(--accent); }
 .sfx-status { margin-top: 0.8rem; font-size: 0.78rem; color: var(--accent); min-height: 1.1em; }
 .sfx-status.error { color: #ff7b7b; }
 
+/* ─── Portraits manager ──────────────────── */
+.portrait-period-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.portrait-period {
+  border: 1px solid var(--card-border);
+  background: var(--bg);
+  padding: 0.65rem 0.75rem;
+}
+
+.portrait-period-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.portrait-period-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.portrait-period-head .upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--card-border);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+}
+.portrait-period-head .upload-label:hover { color: var(--accent); border-color: var(--accent); }
+.portrait-period-head input[type="file"] { display: none; }
+
+.portrait-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portrait-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--card-border);
+  overflow: hidden;
+  background: #000;
+}
+
+.portrait-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.portrait-del {
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 18px; height: 18px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.portrait-thumb:hover .portrait-del { opacity: 1; }
+.portrait-del:hover { background: #ff7b7b; border-color: #ff7b7b; }
+
+.portrait-empty {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.portrait-status { margin-top: 0.8rem; font-size: 0.78rem; color: var(--accent); min-height: 1.1em; }
+.portrait-status.error { color: #ff7b7b; }
+
+@media (max-width: 700px) {
+  .portrait-thumb { width: 56px; height: 56px; }
+}
+
 @media (max-width: 700px) {
   .sfx-pool-head { grid-template-columns: 24px 1fr 1fr; row-gap: 0.4rem; }
   .sfx-pool-vol, .sfx-pool-toggle { grid-column: 1 / -1; justify-content: space-between; }

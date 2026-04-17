@@ -1947,11 +1947,152 @@ async function loadSettings() {
     const volLabel = document.getElementById('sfxVolumeLabel');
     if (volLabel) volLabel.textContent = `${Math.round(PAM_SETTINGS.sfx_volume * 100)}%`;
 
+    // Apply branding from settings (assistant_name replaces "PAM" across the UI)
+    applyBranding(data.assistant_name?.value || 'PAM');
+
     await refreshSFXRegistry();
     renderSFXManager();
+    renderPortraitsManager();
   } catch {
     const status = document.getElementById('settingsStatus');
     if (status) status.textContent = 'Failed to load settings.';
+  }
+}
+
+// ─── Branding (assistant name) ───────────────────
+//
+// Elements opt in via:
+//   <span class="brand-name">PAM</span>              → textContent = name
+//   <el data-brand-text>...PAM...</el>               → replace "PAM" in textContent
+//   <el data-brand-alt alt="PAM">                    → replace "PAM" in alt attr
+//   <el data-brand-title title="PAM">                → replace "PAM" in title attr
+//   <el data-brand-placeholder placeholder="PAM">    → replace "PAM" in placeholder
+//
+// Original attribute/text is cached so re-applying works with a new name.
+
+function applyBranding(name) {
+  const safeName = (name && String(name).trim()) || 'PAM';
+  document.title = safeName;
+  document.querySelectorAll('.brand-name').forEach(e => { e.textContent = safeName; });
+  document.querySelectorAll('[data-brand-text]').forEach(e => {
+    if (!e.dataset.brandOriginal) e.dataset.brandOriginal = e.textContent;
+    e.textContent = e.dataset.brandOriginal.replace(/PAM/g, safeName);
+  });
+  const attrs = [
+    ['alt', 'brandOriginalAlt'],
+    ['title', 'brandOriginalTitle'],
+    ['placeholder', 'brandOriginalPlaceholder'],
+  ];
+  for (const [attr, cacheKey] of attrs) {
+    document.querySelectorAll(`[data-brand-${attr}]`).forEach(e => {
+      if (!e.dataset[cacheKey]) e.dataset[cacheKey] = e.getAttribute(attr) || '';
+      e.setAttribute(attr, e.dataset[cacheKey].replace(/PAM/g, safeName));
+    });
+  }
+}
+
+// ─── Portraits manager UI ────────────────────────
+
+const PORTRAIT_PERIODS = ['morning', 'workday', 'evening'];
+const PORTRAIT_PERIOD_LABELS = {
+  morning: 'Morning (6–8am)',
+  workday: 'Workday (8am–8pm)',
+  evening: 'Evening (8pm–6am)',
+};
+
+function setPortraitStatus(msg, isError) {
+  const el = document.getElementById('portraitStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('error', !!isError);
+  if (msg) {
+    clearTimeout(setPortraitStatus._t);
+    setPortraitStatus._t = setTimeout(() => { el.textContent = ''; el.classList.remove('error'); }, 4000);
+  }
+}
+
+async function renderPortraitsManager() {
+  const root = document.getElementById('portraitPeriodList');
+  if (!root) return;
+  let data;
+  try {
+    const resp = await fetch(`${API}/settings/portraits/`);
+    data = await resp.json();
+  } catch {
+    root.innerHTML = '<p class="empty">Failed to load portraits.</p>';
+    return;
+  }
+  const byPeriod = Object.fromEntries(PORTRAIT_PERIODS.map(p => [p, []]));
+  for (const p of (data.portraits || [])) if (byPeriod[p.period]) byPeriod[p.period].push(p);
+
+  root.innerHTML = PORTRAIT_PERIODS.map(period => {
+    const items = byPeriod[period];
+    const thumbs = items.map(p => `
+      <div class="portrait-thumb" title="${escapeHTML(p.display_name)}">
+        <img src="${p.url}" alt="${escapeHTML(p.display_name)}">
+        <button class="portrait-del" data-id="${p.id}" title="Remove">×</button>
+      </div>
+    `).join('') || '<p class="empty portrait-empty">No custom portraits for this period.</p>';
+    return `
+      <div class="portrait-period">
+        <div class="portrait-period-head">
+          <span class="portrait-period-label">${escapeHTML(PORTRAIT_PERIOD_LABELS[period])}</span>
+          <label class="upload-label">
+            Upload
+            <input type="file" accept="image/*" data-period-upload="${period}">
+          </label>
+        </div>
+        <div class="portrait-thumbs">${thumbs}</div>
+      </div>
+    `;
+  }).join('');
+  bindPortraitsEvents();
+}
+
+function bindPortraitsEvents() {
+  document.querySelectorAll('[data-period-upload]').forEach(input => {
+    input.onchange = async () => {
+      const period = input.dataset.periodUpload;
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('period', period);
+      fd.append('file', file);
+      setPortraitStatus('Uploading…');
+      const resp = await fetch(`${API}/settings/portraits/upload`, { method: 'POST', body: fd });
+      if (resp.ok) {
+        setPortraitStatus(`Added "${file.name}" to ${period}.`);
+        renderPortraitsManager();
+        refreshPortraitBuckets();
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        setPortraitStatus(err.detail || 'Upload failed.', true);
+      }
+      input.value = '';
+    };
+  });
+  document.querySelectorAll('.portrait-del').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.id;
+      if (!confirm('Remove this portrait?')) return;
+      const resp = await fetch(`${API}/settings/portraits/${id}`, { method: 'DELETE' });
+      if (resp.ok) {
+        setPortraitStatus('Removed.');
+        renderPortraitsManager();
+        refreshPortraitBuckets();
+      } else {
+        setPortraitStatus('Remove failed.', true);
+      }
+    };
+  });
+}
+
+// Signal to the presence IIFE that portraits changed. The IIFE exposes a
+// global `refreshPortraitBuckets` hook; if it's not wired yet, fall back to
+// a page reload of just the rotation data.
+async function refreshPortraitBuckets() {
+  if (typeof window._pamRefreshPortraits === 'function') {
+    window._pamRefreshPortraits();
   }
 }
 
@@ -2163,6 +2304,7 @@ document.querySelectorAll('.settings-input').forEach(input => {
       const volLabel = document.getElementById('sfxVolumeLabel');
       if (volLabel) volLabel.textContent = `${Math.round(PAM_SETTINGS.sfx_volume * 100)}%`;
     }
+    if (key === 'assistant_name') applyBranding(value);
     saveSetting(key, value);
   };
   if (input.type === 'checkbox' || input.type === 'range') {
@@ -2177,6 +2319,10 @@ document.querySelectorAll('.settings-input').forEach(input => {
   } else {
     input.addEventListener('change', commit);
     input.addEventListener('blur', commit);
+    // Live-preview assistant_name as the user types
+    if (input.dataset.setting === 'assistant_name') {
+      input.addEventListener('input', () => applyBranding(input.value));
+    }
   }
 });
 
@@ -2665,15 +2811,21 @@ document.getElementById('gratitudeCancelBtn')?.addEventListener('click', () => {
     refreshPortrait(false);
   }
 
-  fetch(`${API}/portraits`)
-    .then(r => r.json())
-    .then(data => {
-      buckets = data || buckets;
-      refreshPortrait(true);
-    })
-    .catch(() => {})
-    .finally(tick);
+  function loadBuckets() {
+    return fetch(`${API}/portraits`)
+      .then(r => r.json())
+      .then(data => {
+        buckets = data || buckets;
+        currentPeriod = null;         // force refreshPortrait to repick
+        refreshPortrait(true);
+      })
+      .catch(() => {});
+  }
+  loadBuckets().finally(tick);
   setInterval(tick, 30000);
+
+  // Hook so the portraits settings UI can trigger a re-fetch after upload/delete
+  window._pamRefreshPortraits = loadBuckets;
 
   function cycle() {
     if (activeList.length < 2) return;

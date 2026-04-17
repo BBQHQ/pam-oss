@@ -13,8 +13,10 @@ from app.services.bootstrap import ensure_certs, seed_starter_data
 from app.routers import (
     voice, tasks, projects, todos, notes, questions,
     settings as settings_router,
-    sfx, briefing, calendar, kanban, accomplishments, prompt_zone, gratitude,
+    sfx, portraits as portraits_router,
+    briefing, calendar, kanban, accomplishments, prompt_zone, gratitude,
 )
+from app.services import portraits as portraits_service
 
 
 async def _run_at_hour(label: str, hour_key: str, hour_default: int, action):
@@ -88,6 +90,7 @@ app.include_router(questions.router)
 app.include_router(projects.router)
 app.include_router(settings_router.router)
 app.include_router(sfx.router)
+app.include_router(portraits_router.router)
 app.include_router(briefing.router)
 app.include_router(calendar.router)
 app.include_router(kanban.router)
@@ -101,20 +104,35 @@ app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 img_dir = PAM_ROOT / "img"
 if img_dir.exists():
     app.mount("/img", StaticFiles(directory=str(img_dir)), name="img")
+# User-uploaded custom assets (portraits, future extensions) live under data/custom/
+# so they survive re-clones when data/ is preserved.
+from app.config import DATA_DIR as _DATA_DIR
+_custom_dir = _DATA_DIR / "custom"
+_custom_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/custom", StaticFiles(directory=str(_custom_dir)), name="custom")
 
 
 @app.get("/portraits")
 async def list_portraits():
-    """Return PAM portraits grouped by time of day, scanned from /img subfolders."""
+    """Return portraits grouped by time of day.
+
+    Built-in portraits under /img/<period>/ are merged with user-uploaded
+    portraits from data/custom/portraits/<period>/. Supports common image
+    extensions (png, jpg, jpeg, webp, gif).
+    """
     buckets = {}
+    custom_urls = await portraits_service.list_urls_by_period()
+    exts = ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif")
     for period in ("morning", "workday", "evening"):
+        items: list[str] = []
         d = img_dir / period
         if d.exists():
-            buckets[period] = sorted(
-                f"/img/{period}/{p.name}" for p in d.glob("*.png")
-            )
-        else:
-            buckets[period] = []
+            found: list[str] = []
+            for pattern in exts:
+                found.extend(f"/img/{period}/{p.name}" for p in d.glob(pattern))
+            items.extend(sorted(found))
+        items.extend(custom_urls.get(period, []))
+        buckets[period] = items
     return buckets
 
 

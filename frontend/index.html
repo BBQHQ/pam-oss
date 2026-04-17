@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAM</title>
+  <title id="pageTitle">PAM</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📋</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/pam.css">
@@ -15,7 +15,7 @@
     <!-- ═══ MOBILE HEADER ═══ -->
     <div class="mobile-header">
       <button type="button" class="pam-presence-mobile" id="pamPresenceMobile" title="Tap to cycle">
-        <img src="/img/pam2.png" alt="PAM" class="pam-presence-mobile-img" id="pamPresenceMobileImg">
+        <img src="/img/pam2.png" alt="PAM" data-brand-alt class="pam-presence-mobile-img" id="pamPresenceMobileImg">
         <span class="pam-presence-mobile-dot"></span>
       </button>
       <div class="mobile-header-meta">
@@ -30,7 +30,7 @@
     <!-- ═══ SIDEBAR ═══ -->
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img src="/img/pam3.png" alt="PAM" class="pam-avatar" title="PAM">
+        <img src="/img/pam3.png" alt="PAM" title="PAM" data-brand-alt data-brand-title class="pam-avatar">
         <span class="brand-name">PAM</span>
       </div>
       <nav>
@@ -64,7 +64,7 @@
         </a>
         <a class="nav-item" data-section="tasks" onclick="showSection('tasks')">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          PAM Tasks
+          <span data-brand-text>PAM Tasks</span>
         </a>
         <a class="nav-item" data-section="calendar" onclick="showSection('calendar')">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -85,7 +85,7 @@
       </nav>
       <div class="sidebar-footer">
         <div class="pam-presence" id="pamPresence" title="Click to cycle">
-          <img src="/img/pam2.png" alt="PAM" class="pam-presence-img" id="pamPresenceImg">
+          <img src="/img/pam2.png" alt="PAM" data-brand-alt class="pam-presence-img" id="pamPresenceImg">
           <div class="pam-presence-overlay">
             <div class="pam-presence-status">
               <span class="pam-presence-dot"></span>
@@ -263,7 +263,7 @@
               <div class="result-text" id="resultText"></div>
               <div class="result-actions">
                 <button class="btn-secondary" id="sendToTodoBtn">Add as To-Do</button>
-                <button class="btn-secondary" id="sendToTaskBtn">Send as PAM Task</button>
+                <button class="btn-secondary" id="sendToTaskBtn" data-brand-text>Send as PAM Task</button>
                 <button class="btn-secondary" id="sendToNoteBtn">Add Note</button>
                 <button class="btn-secondary" id="sendToWinBtn">Log as Win</button>
               </div>
@@ -302,9 +302,9 @@
         <div class="page hidden" id="page-tasks">
           <div class="card">
             <div class="card-header"><h2>Submit a Task</h2></div>
-            <p class="card-desc">Give PAM or Claude something to act on. Auto-routed to projects.</p>
+            <p class="card-desc" data-brand-text>Give PAM or Claude something to act on. Auto-routed to projects.</p>
             <div class="input-row">
-              <input type="text" id="taskInput" placeholder="Give PAM a task..." autocomplete="off">
+              <input type="text" id="taskInput" placeholder="Give PAM a task..." data-brand-placeholder autocomplete="off">
               <button class="btn-primary" id="taskSubmitBtn">Submit</button>
             </div>
             <div class="task-meta-hint" id="taskInputMeta"></div>
@@ -448,8 +448,29 @@
         <!-- ═══ SETTINGS ═══ -->
         <div class="page hidden" id="page-settings">
           <div class="card settings-card">
+            <div class="card-header"><h2>Identity</h2></div>
+            <p class="card-desc">Give your assistant a name. All "PAM" text in the UI updates live.</p>
+            <div class="settings-grid">
+              <label class="settings-row">
+                <span class="settings-label">Assistant name</span>
+                <input type="text" maxlength="32" class="settings-input" data-setting="assistant_name" placeholder="PAM">
+                <span class="settings-hint">Defaults to PAM</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card settings-card">
+            <div class="card-header"><h2>Portraits</h2></div>
+            <p class="card-desc">Upload custom avatars for morning, workday, or evening. Custom + built-in portraits are merged in the rotation.</p>
+            <div id="portraitPeriodList" class="portrait-period-list">
+              <p class="empty">Loading portraits…</p>
+            </div>
+            <p class="portrait-status" id="portraitStatus"></p>
+          </div>
+
+          <div class="card settings-card">
             <div class="card-header"><h2>Scheduling</h2></div>
-            <p class="card-desc">When PAM's automated jobs run. Changes take effect on the next daily cycle.</p>
+            <p class="card-desc" data-brand-text>When PAM's automated jobs run. Changes take effect on the next daily cycle.</p>
             <div class="settings-grid">
               <label class="settings-row">
                 <span class="settings-label">Briefing email hour</span>
@@ -471,7 +492,7 @@
 
           <div class="card settings-card">
             <div class="card-header"><h2>Notifications</h2></div>
-            <p class="card-desc">Where PAM's emails and calendar events are addressed.</p>
+            <p class="card-desc" data-brand-text>Where PAM's emails and calendar events are addressed.</p>
             <div class="settings-grid">
               <label class="settings-row">
                 <span class="settings-label">Timezone</span>
@@ -723,7 +744,7 @@
         </a>
         <a class="nav-item" data-section="tasks" onclick="showSection('tasks')">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          PAM Tasks
+          <span data-brand-text>PAM Tasks</span>
         </a>
         <a class="nav-item" data-section="calendar" onclick="showSection('calendar')">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
