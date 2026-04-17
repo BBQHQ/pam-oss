@@ -28,6 +28,7 @@ lock-in beyond the AI model itself.
 - **Wins / accomplishments** — auto-captured from completed todos, answered questions, done tasks
 - **Gratitude** — curated "pillars" + auto-enriched progress tiles
 - **Prompts** — library of your favorite prompts, animated "golden" tiles for starred ones
+- **Sound effects** — per-pool SFX library with custom MP3 uploads and Myinstants URL ingest
 - **Daily briefing + check-in** — Claude-generated, emailed at 7 AM + 1 PM (optional)
 - **Settings** — runtime tweaks for schedule hours, timezone, SFX, email recipient
 

@@ -16,7 +16,7 @@ app/
 ├── main.py              # FastAPI app + lifespan (ensures certs, seeds data, starts schedulers)
 ├── config.py            # Pydantic BaseSettings reading .env
 ├── models.py            # Pydantic schemas (Project, etc.)
-├── routers/             # HTTP endpoints (voice, todos, tasks, notes, settings, etc.)
+├── routers/             # HTTP endpoints (voice, todos, tasks, notes, settings, sfx, etc.)
 └── services/            # Business logic (per feature) + shared:
     ├── bootstrap.py     # SSL cert gen + first-boot seed
     ├── claude_cli.py    # Wrapper around `claude --print -p`
@@ -25,7 +25,7 @@ frontend/
 ├── index.html           # SPA entry
 ├── pam.js
 ├── pam.css
-└── sounds/              # Optional SFX (user drop-in, see README)
+└── sounds/              # SFX library (empty by default; populate via Settings → Sound Effects Library — uploads or Myinstants URL ingest)
 data/                    # SQLite + JSON state (gitignored)
 whisper/                 # Built binary + model (gitignored, produced by scripts/install_whisper)
 certs/                   # SSL (gitignored, auto-generated)
