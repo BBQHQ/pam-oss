@@ -13,7 +13,7 @@ from app.services.bootstrap import ensure_certs, seed_starter_data
 from app.routers import (
     voice, tasks, projects, todos, notes, questions,
     settings as settings_router,
-    briefing, calendar, kanban, accomplishments, prompt_zone, gratitude,
+    sfx, briefing, calendar, kanban, accomplishments, prompt_zone, gratitude,
 )
 
 
@@ -87,6 +87,7 @@ app.include_router(notes.router)
 app.include_router(questions.router)
 app.include_router(projects.router)
 app.include_router(settings_router.router)
+app.include_router(sfx.router)
 app.include_router(briefing.router)
 app.include_router(calendar.router)
 app.include_router(kanban.router)

@@ -7,6 +7,8 @@ from app.config import DATA_DIR
 
 DB_PATH = DATA_DIR / "notes.db"
 
+SFX_POOLS = ("create", "complete", "delete", "utility", "epic")
+
 # Defaults: key -> (default_value, category). Defines the v1 settings surface.
 DEFAULTS: dict[str, tuple[Any, str]] = {
     "briefing_hour": (7, "schedule"),
@@ -16,6 +18,8 @@ DEFAULTS: dict[str, tuple[Any, str]] = {
     "briefing_email_recipient": ("", "notifications"),
     "sfx_enabled": (True, "ui"),
     "sfx_volume": (0.6, "ui"),
+    **{f"sfx_pool_{p}_enabled": (True, "ui") for p in SFX_POOLS},
+    **{f"sfx_pool_{p}_volume": (1.0, "ui") for p in SFX_POOLS},
 }
 
 
