@@ -1994,7 +1994,7 @@ function applyBranding(name) {
 
 // ─── Brand avatar (top-left logo) ────────────────
 
-const BRAND_AVATAR_DEFAULT = '/img/pam3.png';
+const BRAND_AVATAR_DEFAULT = '/img/default-avatar.svg';
 
 function applyBrandAvatar(url) {
   const target = url && url.trim() ? url : BRAND_AVATAR_DEFAULT;
@@ -2807,7 +2807,7 @@ document.getElementById('gratitudeCancelBtn')?.addEventListener('click', () => {
   if (!presence && !mobilePresence) return;
 
   let buckets = { morning: [], workday: [], evening: [] };
-  let activeList = ['/img/pam2.png'];
+  let activeList = ['/img/default-avatar.svg'];
   let cur = 0;
   let currentPeriod = null;
 

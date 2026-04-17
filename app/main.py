@@ -67,8 +67,23 @@ async def _checkin_scheduler():
     await _run_at_hour("Check-in", "checkin_hour", settings.default_checkin_hour, send_checkin_email)
 
 
+def _quiet_conn_reset(loop, context):
+    """Swallow harmless ConnectionResetError from Windows Proactor event loop.
+
+    On Windows + Python 3.12+, uvicorn's ProactorEventLoop logs a traceback
+    whenever a browser closes a polling connection with RST instead of FIN
+    (e.g., fast /voice/status polling). The request itself completes fine;
+    only the cleanup path on connection_lost trips. Silent on other platforms.
+    """
+    exc = context.get("exception")
+    if isinstance(exc, ConnectionResetError):
+        return
+    loop.default_exception_handler(context)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    asyncio.get_event_loop().set_exception_handler(_quiet_conn_reset)
     ensure_certs()
     await seed_starter_data()
     load_projects()
