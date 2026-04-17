@@ -19,12 +19,12 @@ _progress_locks: dict[str, asyncio.Lock] = {}
 DB_PATH = DATA_DIR / "notes.db"
 
 DEFAULT_PILLARS = [
-    {"title": "Family & Friends", "body": "Daughter, marriage, relationships -- the people who matter most.", "icon": "FAM", "color": "rgba(232, 143, 143, 0.3)"},
-    {"title": "Health", "body": "Physical wellbeing, ability to be active, energy to keep building.", "icon": "HP", "color": "rgba(143, 232, 166, 0.3)"},
-    {"title": "Home", "body": "Beautiful house, great neighborhood everybody wants to live in.", "icon": "HM", "color": "rgba(143, 186, 232, 0.3)"},
-    {"title": "Animals", "body": "Pets, nature, the living things that ground you.", "icon": "PET", "color": "rgba(200, 175, 232, 0.3)"},
-    {"title": "Career", "body": "Good income, AI consulting, meaningful work that matters.", "icon": "WRK", "color": "rgba(232, 206, 143, 0.3)"},
-    {"title": "Creative Freedom", "body": "Ability to build whatever you want with AI. More progress than ever.", "icon": "DEV", "color": "rgba(143, 220, 232, 0.3)"},
+    {"title": "Family & Friends", "body": "The people who matter most to you.", "icon": "FAM", "color": "rgba(232, 143, 143, 0.3)"},
+    {"title": "Health", "body": "Physical wellbeing and the energy to keep going.", "icon": "HP", "color": "rgba(143, 232, 166, 0.3)"},
+    {"title": "Home", "body": "The place you live and the space you've made your own.", "icon": "HM", "color": "rgba(143, 186, 232, 0.3)"},
+    {"title": "Animals", "body": "Pets, wildlife, the living things around you.", "icon": "PET", "color": "rgba(200, 175, 232, 0.3)"},
+    {"title": "Career", "body": "The work you do and what it makes possible.", "icon": "WRK", "color": "rgba(232, 206, 143, 0.3)"},
+    {"title": "Creative Freedom", "body": "The ability to build and create on your own terms.", "icon": "DEV", "color": "rgba(143, 220, 232, 0.3)"},
 ]
 
 DEFAULT_PROGRESS = [
