@@ -153,111 +153,131 @@ async function addTodo() {
   loadTodos();
 }
 
+const DASH_TODO_COLLAPSED_KEY = 'pam.dashTodos.collapsed';
+
+function loadDashTodoCollapsed() {
+  try {
+    return JSON.parse(localStorage.getItem(DASH_TODO_COLLAPSED_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDashTodoCollapsed(state) {
+  try { localStorage.setItem(DASH_TODO_COLLAPSED_KEY, JSON.stringify(state)); } catch {}
+}
+
+function toggleDashTodoGroup(cat) {
+  const state = loadDashTodoCollapsed();
+  state[cat] = !state[cat];
+  saveDashTodoCollapsed(state);
+  const group = document.querySelector(`.dash-todo-group[data-cat="${CSS.escape(cat)}"]`);
+  if (group) group.classList.toggle('collapsed', !!state[cat]);
+}
+
+function renderDashTodoItem(t) {
+  return `
+    <div class="todo-item">
+      <button class="todo-checkbox ${t.done ? 'checked' : ''}"
+              onclick="toggleTodo('${t.id}', ${t.done})">${t.done ? '&#10003;' : ''}</button>
+      <span class="todo-text ${t.done ? 'done' : ''}">${esc(t.text)}</span>
+      <button class="todo-delete" onclick="deleteTodo('${t.id}')">&#10005;</button>
+    </div>
+  `;
+}
+
 async function loadTodos() {
   try {
-    const resp = await fetch(`${API}/todos/?show_done=${showingDone}`);
-    const todos = await resp.json();
+    const resp = await fetch(`${API}/todos/grouped?show_done=${showingDone}`);
+    const grouped = await resp.json();
 
-    const allResp = await fetch(`${API}/todos/?show_done=true`);
-    const allTodos = await allResp.json();
-    const hasDone = allTodos.some(t => t.done);
-    todoShowDone.style.display = hasDone ? 'block' : 'none';
+    // Show the "Show done" link when any category has dones in the open view.
+    const anyDone = Object.values(grouped).some(g => (g.done_count || 0) > 0);
+    todoShowDone.style.display = anyDone ? 'block' : 'none';
 
-    // Filter out sub-tasks (shown on the To-Dos page, not here)
-    const topLevel = todos.filter(t => !t.parent_id);
+    // Top-level items only (subtasks stay on /todos).
+    const cats = Object.keys(grouped)
+      .map(c => ({
+        key: c,
+        items: (grouped[c].items || []).filter(t => !t.parent_id),
+      }))
+      .filter(g => g.items.length > 0);
 
-    // Sort: categorized first, then uncategorized
-    topLevel.sort((a, b) => {
-      const ac = a.category || '';
-      const bc = b.category || '';
-      if (ac && !bc) return -1;
-      if (!ac && bc) return 1;
-      return ac.localeCompare(bc);
-    });
-
-    if (topLevel.length === 0) {
+    if (!cats.length) {
       todoList.innerHTML = '<p class="empty">Nothing here yet.</p>';
       return;
     }
 
-    todoList.innerHTML = topLevel.map(t => `
-      <div class="todo-item">
-        <button class="todo-checkbox ${t.done ? 'checked' : ''}"
-                onclick="toggleTodo('${t.id}', ${t.done})">${t.done ? '&#10003;' : ''}</button>
-        ${t.category ? `<span class="todo-cat-badge">${esc(t.category)}</span>` : ''}
-        <span class="todo-text ${t.done ? 'done' : ''}">${esc(t.text)}</span>
-        <button class="todo-delete" onclick="deleteTodo('${t.id}')">&#10005;</button>
-      </div>
-    `).join('');
+    // Categorized first (alpha), uncategorized last.
+    cats.sort((a, b) => {
+      if (!a.key && b.key) return 1;
+      if (a.key && !b.key) return -1;
+      return a.key.localeCompare(b.key);
+    });
+
+    const collapsed = loadDashTodoCollapsed();
+
+    todoList.innerHTML = cats.map(({ key, items }) => {
+      const label = key || 'Uncategorized';
+      const isCollapsed = !!collapsed[key];
+      const safeKey = esc(key);
+      return `
+        <div class="dash-todo-group ${isCollapsed ? 'collapsed' : ''}" data-cat="${safeKey}">
+          <div class="dash-todo-group-header" onclick="toggleDashTodoGroup('${safeKey.replace(/'/g, "\\'")}')">
+            <span class="dash-todo-group-arrow">&#9660;</span>
+            <span class="dash-todo-group-label">${esc(label)}</span>
+            <span class="dash-todo-group-count">${items.length}</span>
+          </div>
+          <div class="dash-todo-group-body">
+            ${items.map(renderDashTodoItem).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
   } catch {
     todoList.innerHTML = '<p class="empty">Failed to load.</p>';
   }
 }
 
 // ─── Sound Effects ─────────────────────────────────
-const PAM_SFX = {
-  create: [
-    '/static/sounds/yoshi-tongue.mp3',
-    '/static/sounds/mac-quack.mp3',
-    '/static/sounds/dkc2-kritter.mp3',
-    '/static/sounds/check-mark.mp3',
-    '/static/sounds/magic-fairy.mp3',
-    '/static/sounds/dragon-ball-z-budokai-tenkaichi-2-select-sfx-65004.mp3',
-    '/static/sounds/silent-hill-2-receiving-item.mp3',
-    '/static/sounds/anime-magic-sound-effect-96497.mp3',
-    '/static/sounds/anime-tututru-33951.mp3',
-    '/static/sounds/fears-to-fathom-notification-sound-46473.mp3',
-  ],
-  complete: [
-    '/static/sounds/metal-gear-alert.mp3',
-    '/static/sounds/punch.mp3',
-    '/static/sounds/pizza-tower-taunt.mp3',
-    '/static/sounds/anime-punch.mp3',
-    '/static/sounds/sonic-badnik-death.mp3',
-    '/static/sounds/starcraft-confirm-34953.mp3',
-    '/static/sounds/wii-copy-finish-sound-34420.mp3',
-    '/static/sounds/rizz-sound-effect-54189.mp3',
-    '/static/sounds/pew-loud-boom-44976.mp3',
-  ],
-  delete: [
-    '/static/sounds/sonic-death.mp3',
-    '/static/sounds/minecraft-death.mp3',
-    '/static/sounds/kirby-death.mp3',
-    '/static/sounds/lego-yoda-death.mp3',
-    '/static/sounds/megaman-x-death.mp3',
-    '/static/sounds/spongebob-boowomp.mp3',
-    '/static/sounds/price-is-right-losing.mp3',
-    '/static/sounds/incorrect-sound-effect-88070.mp3',
-    '/static/sounds/boo-womp-spongbob-sound-effect-66699.mp3',
-  ],
-  utility: [
-    '/static/sounds/spongebob-duck.mp3',
-    '/static/sounds/death-note-confusion.mp3',
-    '/static/sounds/teleport-sound.mp3',
-    '/static/sounds/silent-hill-2-ui-sound-72491.mp3',
-    '/static/sounds/earthbound-partners-turn-6957.mp3',
-    '/static/sounds/old-steam-chat-notification-61.mp3',
-    '/static/sounds/quake-jump-dah-sarge-49873.mp3',
-    '/static/sounds/sonic-1-teleport-2287.mp3',
-  ],
-  epic: [
-    '/static/sounds/kamehameha-wave-sound-effect.mp3',
-    '/static/sounds/goldeneye-n64-music-bong-recreation-55824.mp3',
-    '/static/sounds/anime-wow.mp3',
-    '/static/sounds/awkward-pause-anime-sounds-3397.mp3',
-    '/static/sounds/anime-eurobeat-65242.mp3',
-    '/static/sounds/what-bottom-text-meme-sanctuary-guardian-s-24591.mp3',
-  ],
+// Dynamic registry — populated from /settings/sfx on boot + after edits.
+const PAM_SFX_POOLS = ['create', 'complete', 'delete', 'utility', 'epic'];
+const PAM_SFX = { create: [], complete: [], delete: [], utility: [], epic: [] };
+const PAM_SETTINGS = {
+  sfx_enabled: true,
+  sfx_volume: 0.6,
+  sfx_pool_create_enabled: true, sfx_pool_create_volume: 1.0,
+  sfx_pool_complete_enabled: true, sfx_pool_complete_volume: 1.0,
+  sfx_pool_delete_enabled: true, sfx_pool_delete_volume: 1.0,
+  sfx_pool_utility_enabled: true, sfx_pool_utility_volume: 1.0,
+  sfx_pool_epic_enabled: true, sfx_pool_epic_volume: 1.0,
 };
-const PAM_SETTINGS = { sfx_enabled: true, sfx_volume: 0.6 };
+
+async function refreshSFXRegistry() {
+  try {
+    const resp = await fetch(`${API}/settings/sfx/`);
+    const data = await resp.json();
+    for (const p of PAM_SFX_POOLS) PAM_SFX[p] = [];
+    for (const s of (data.sounds || [])) {
+      if (!s.enabled) continue;
+      if (PAM_SFX[s.pool]) PAM_SFX[s.pool].push(s.url);
+    }
+    return data.sounds || [];
+  } catch {
+    return [];
+  }
+}
+
 function playSFX(category) {
   try {
     if (!PAM_SETTINGS.sfx_enabled) return;
+    if (PAM_SETTINGS[`sfx_pool_${category}_enabled`] === false) return;
     const pool = PAM_SFX[category];
-    if (!pool) return;
+    if (!pool || !pool.length) return;
     const src = pool[Math.floor(Math.random() * pool.length)];
     const audio = new Audio(src);
-    audio.volume = PAM_SETTINGS.sfx_volume;
+    const poolVol = Number(PAM_SETTINGS[`sfx_pool_${category}_volume`] ?? 1.0);
+    audio.volume = Math.max(0, Math.min(1, PAM_SETTINGS.sfx_volume * poolVol));
     audio.play().catch(() => {});
   } catch {}
 }
@@ -1906,6 +1926,12 @@ async function loadSettings() {
     // Cache SFX values so playSFX() reflects current preferences immediately
     if (data.sfx_enabled) PAM_SETTINGS.sfx_enabled = !!data.sfx_enabled.value;
     if (data.sfx_volume) PAM_SETTINGS.sfx_volume = Number(data.sfx_volume.value);
+    for (const p of PAM_SFX_POOLS) {
+      const en = data[`sfx_pool_${p}_enabled`];
+      const vo = data[`sfx_pool_${p}_volume`];
+      if (en) PAM_SETTINGS[`sfx_pool_${p}_enabled`] = !!en.value;
+      if (vo) PAM_SETTINGS[`sfx_pool_${p}_volume`] = Number(vo.value);
+    }
 
     document.querySelectorAll('.settings-input').forEach(input => {
       const key = input.dataset.setting;
@@ -1920,10 +1946,187 @@ async function loadSettings() {
 
     const volLabel = document.getElementById('sfxVolumeLabel');
     if (volLabel) volLabel.textContent = `${Math.round(PAM_SETTINGS.sfx_volume * 100)}%`;
+
+    await refreshSFXRegistry();
+    renderSFXManager();
   } catch {
     const status = document.getElementById('settingsStatus');
     if (status) status.textContent = 'Failed to load settings.';
   }
+}
+
+// ─── SFX manager UI ──────────────────────────────
+
+function setSFXStatus(msg, isError) {
+  const el = document.getElementById('sfxStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('error', !!isError);
+  if (msg) {
+    clearTimeout(setSFXStatus._t);
+    setSFXStatus._t = setTimeout(() => { el.textContent = ''; el.classList.remove('error'); }, 4000);
+  }
+}
+
+async function renderSFXManager() {
+  const root = document.getElementById('sfxPoolList');
+  if (!root) return;
+  let data;
+  try {
+    const resp = await fetch(`${API}/settings/sfx/`);
+    data = await resp.json();
+  } catch {
+    root.innerHTML = '<p class="empty">Failed to load sounds.</p>';
+    return;
+  }
+  const byPool = Object.fromEntries(PAM_SFX_POOLS.map(p => [p, []]));
+  for (const s of (data.sounds || [])) if (byPool[s.pool]) byPool[s.pool].push(s);
+
+  root.innerHTML = PAM_SFX_POOLS.map(pool => {
+    const sounds = byPool[pool];
+    const enabled = PAM_SETTINGS[`sfx_pool_${pool}_enabled`] !== false;
+    const vol = Number(PAM_SETTINGS[`sfx_pool_${pool}_volume`] ?? 1.0);
+    const volPct = Math.round(vol * 100);
+    const rows = sounds.map(s => `
+      <div class="sfx-sound-row">
+        <button class="sfx-play" data-url="${s.url}" title="Preview">▶</button>
+        <span class="sfx-sound-name" title="${s.filename}">${escapeHTML(s.display_name)}</span>
+        <span class="sfx-sound-tag${s.is_custom ? ' is-custom' : ''}">${s.is_custom ? (s.source_url ? 'myinstants' : 'custom') : 'built-in'}</span>
+        <button class="sfx-del" data-id="${s.id}" title="Remove">×</button>
+      </div>
+    `).join('') || '<p class="empty">No sounds in this pool yet.</p>';
+
+    return `
+      <div class="sfx-pool" data-pool="${pool}" data-open="false">
+        <div class="sfx-pool-head" data-toggle="${pool}">
+          <span class="sfx-pool-caret">▸</span>
+          <span class="sfx-pool-name">${pool}</span>
+          <span class="sfx-pool-count">${sounds.length} sound${sounds.length === 1 ? '' : 's'}</span>
+          <span class="sfx-pool-vol" onclick="event.stopPropagation()">
+            <input type="range" min="0" max="1" step="0.05" value="${vol}" data-pool-vol="${pool}">
+            <span class="sfx-pool-vol-label" data-pool-vol-label="${pool}">${volPct}%</span>
+          </span>
+          <span class="sfx-pool-toggle" onclick="event.stopPropagation()">
+            <label>on</label>
+            <input type="checkbox" ${enabled ? 'checked' : ''} data-pool-enabled="${pool}">
+          </span>
+        </div>
+        <div class="sfx-pool-body">
+          ${rows}
+          <div class="sfx-add-row">
+            <input type="text" placeholder="Paste a Myinstants URL (myinstants.com/en/instant/…)" data-pool-url="${pool}">
+            <label class="upload-label">
+              Upload MP3
+              <input type="file" accept="audio/mpeg,.mp3" data-pool-upload="${pool}">
+            </label>
+          </div>
+          <div class="sfx-add-actions">
+            <button data-pool-ingest="${pool}">Ingest URL</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  bindSFXEvents();
+}
+
+function bindSFXEvents() {
+  document.querySelectorAll('.sfx-pool-head').forEach(head => {
+    head.onclick = () => {
+      const pool = head.closest('.sfx-pool');
+      pool.dataset.open = pool.dataset.open === 'true' ? 'false' : 'true';
+    };
+  });
+  document.querySelectorAll('.sfx-play').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const audio = new Audio(btn.dataset.url);
+      audio.volume = PAM_SETTINGS.sfx_volume;
+      audio.play().catch(() => {});
+    };
+  });
+  document.querySelectorAll('.sfx-del').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!confirm('Remove this sound?')) return;
+      const resp = await fetch(`${API}/settings/sfx/${id}`, { method: 'DELETE' });
+      if (resp.ok) {
+        setSFXStatus('Removed.');
+        await refreshSFXRegistry();
+        renderSFXManager();
+      } else {
+        setSFXStatus('Remove failed.', true);
+      }
+    };
+  });
+  document.querySelectorAll('[data-pool-enabled]').forEach(cb => {
+    cb.onchange = () => {
+      const pool = cb.dataset.poolEnabled;
+      PAM_SETTINGS[`sfx_pool_${pool}_enabled`] = cb.checked;
+      saveSetting(`sfx_pool_${pool}_enabled`, cb.checked);
+    };
+  });
+  document.querySelectorAll('[data-pool-vol]').forEach(rng => {
+    const pool = rng.dataset.poolVol;
+    const label = document.querySelector(`[data-pool-vol-label="${pool}"]`);
+    rng.oninput = () => {
+      const v = Number(rng.value);
+      PAM_SETTINGS[`sfx_pool_${pool}_volume`] = v;
+      if (label) label.textContent = `${Math.round(v * 100)}%`;
+    };
+    rng.onchange = () => saveSetting(`sfx_pool_${pool}_volume`, Number(rng.value));
+  });
+  document.querySelectorAll('[data-pool-upload]').forEach(input => {
+    input.onchange = async () => {
+      const pool = input.dataset.poolUpload;
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('pool', pool);
+      fd.append('file', file);
+      setSFXStatus('Uploading…');
+      const resp = await fetch(`${API}/settings/sfx/upload`, { method: 'POST', body: fd });
+      if (resp.ok) {
+        setSFXStatus(`Added "${file.name}" to ${pool}.`);
+        await refreshSFXRegistry();
+        renderSFXManager();
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        setSFXStatus(err.detail || 'Upload failed.', true);
+      }
+      input.value = '';
+    };
+  });
+  document.querySelectorAll('[data-pool-ingest]').forEach(btn => {
+    btn.onclick = async () => {
+      const pool = btn.dataset.poolIngest;
+      const urlInput = document.querySelector(`[data-pool-url="${pool}"]`);
+      const url = (urlInput?.value || '').trim();
+      if (!url) { setSFXStatus('Paste a Myinstants URL first.', true); return; }
+      setSFXStatus('Fetching from Myinstants…');
+      const resp = await fetch(`${API}/settings/sfx/from-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, pool }),
+      });
+      if (resp.ok) {
+        const sound = await resp.json();
+        setSFXStatus(`Added "${sound.display_name}" to ${pool}.`);
+        if (urlInput) urlInput.value = '';
+        await refreshSFXRegistry();
+        renderSFXManager();
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        setSFXStatus(err.detail || 'Ingest failed.', true);
+      }
+    };
+  });
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 async function saveSetting(key, value) {
@@ -2292,37 +2495,50 @@ const GRATITUDE_WAVY_BORDER = `<svg class="gratitude-wave-svg" viewBox="0 0 100 
 
 async function loadGratitudePage() {
   const container = document.getElementById('gratitudeTiles');
+  // Kick off both fetches in parallel; paint the shell the moment tiles arrive.
+  const shellP = fetch(`${API}/gratitude/`).then(r => r.json());
+  const progressP = fetch(`${API}/gratitude/progress`).then(r => r.json()).catch(() => ({}));
+
+  let tiles;
   try {
-    const resp = await fetch(`${API}/gratitude/`);
-    const tiles = await resp.json();
-    if (!tiles.length) {
-      container.innerHTML = '<p class="empty">No gratitude tiles yet.</p>';
-      return;
-    }
-    container.innerHTML = tiles.map(t => {
-      const isPillar = t.category === 'pillar';
-      const progressHtml = !isPillar && t.progress_data
-        ? `<div class="gratitude-progress">${esc(t.progress_data.label || '')}</div>`
-        : '';
-      const bodyHtml = t.body
-        ? `<div class="gratitude-tile-body">${esc(t.body)}</div>`
-        : '';
-      return `
-        <div class="gratitude-tile ${isPillar ? 'gratitude-pillar' : 'gratitude-data'}"
-             style="--tile-color: ${t.color}"
-             ${isPillar ? `onclick="editGratitudeTile('${t.id}')"` : ''}>
-          ${GRATITUDE_WAVY_BORDER}
-          <div class="gratitude-tile-icon">${t.icon || ''}</div>
-          <div class="gratitude-tile-title">${esc(t.title)}</div>
-          ${bodyHtml}
-          ${progressHtml}
-          ${isPillar ? '<div class="gratitude-tile-hint">click to edit</div>' : ''}
-          <button class="gratitude-delete-btn" onclick="event.stopPropagation(); deleteGratitudeTile('${t.id}')" title="Delete">&times;</button>
-        </div>
-      `;
-    }).join('');
+    tiles = await shellP;
   } catch (err) {
     console.error('Failed to load gratitude:', err);
+    return;
+  }
+  if (!tiles.length) {
+    container.innerHTML = '<p class="empty">No gratitude tiles yet.</p>';
+    return;
+  }
+  container.innerHTML = tiles.map(t => {
+    const isPillar = t.category === 'pillar';
+    const bodyHtml = t.body
+      ? `<div class="gratitude-tile-body">${esc(t.body)}</div>`
+      : '';
+    const progressHtml = !isPillar
+      ? `<div class="gratitude-progress" data-source="${esc(t.data_source || '')}">…</div>`
+      : '';
+    return `
+      <div class="gratitude-tile ${isPillar ? 'gratitude-pillar' : 'gratitude-data'}"
+           style="--tile-color: ${t.color}"
+           ${isPillar ? `onclick="editGratitudeTile('${t.id}')"` : ''}>
+        ${GRATITUDE_WAVY_BORDER}
+        <div class="gratitude-tile-icon">${t.icon || ''}</div>
+        <div class="gratitude-tile-title">${esc(t.title)}</div>
+        ${bodyHtml}
+        ${progressHtml}
+        ${isPillar ? '<div class="gratitude-tile-hint">click to edit</div>' : ''}
+        <button class="gratitude-delete-btn" onclick="event.stopPropagation(); deleteGratitudeTile('${t.id}')" title="Delete">&times;</button>
+      </div>
+    `;
+  }).join('');
+
+  // Fill progress labels when the enrichment fetch resolves.
+  const snap = await progressP;
+  for (const el of container.querySelectorAll('.gratitude-progress[data-source]')) {
+    const src = el.getAttribute('data-source');
+    const data = snap && snap[src];
+    el.textContent = (data && data.label) || '';
   }
 }
 
@@ -2393,7 +2609,10 @@ document.getElementById('gratitudeCancelBtn')?.addEventListener('click', () => {
   const img = document.getElementById('pamPresenceImg');
   const txt = document.getElementById('pamPresenceText');
   const tm  = document.getElementById('pamPresenceTime');
-  if (!presence || !img) return;
+  const mobilePresence = document.getElementById('pamPresenceMobile');
+  const mobileImg = document.getElementById('pamPresenceMobileImg');
+  const mobileTxt = document.getElementById('pamPresenceMobileText');
+  if (!presence && !mobilePresence) return;
 
   let buckets = { morning: [], workday: [], evening: [] };
   let activeList = ['/img/pam2.png'];
@@ -2417,6 +2636,11 @@ document.getElementById('gratitudeCancelBtn')?.addEventListener('click', () => {
     return 'On call';
   }
 
+  function setPortraitSrc(src) {
+    if (img) img.src = src;
+    if (mobileImg) mobileImg.src = src;
+  }
+
   function refreshPortrait(force) {
     const d = new Date();
     const period = periodFor(d.getHours());
@@ -2425,22 +2649,22 @@ document.getElementById('gratitudeCancelBtn')?.addEventListener('click', () => {
       const list = (buckets[period] && buckets[period].length) ? buckets[period] : null;
       if (list) {
         activeList = list;
-        // Deterministic pick per (day, period) so it doesn't churn on every tick
         const dayIdx = Math.floor(Date.now() / 86400000);
         cur = (dayIdx + period.length) % activeList.length;
-        img.src = activeList[cur];
+        setPortraitSrc(activeList[cur]);
       }
     }
   }
 
   function tick() {
     const d = new Date();
-    txt.textContent = statusFor(d.getHours());
-    tm.textContent  = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const status = statusFor(d.getHours());
+    if (txt) txt.textContent = status;
+    if (tm)  tm.textContent  = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    if (mobileTxt) mobileTxt.textContent = status;
     refreshPortrait(false);
   }
 
-  // Load buckets, then start
   fetch(`${API}/portraits`)
     .then(r => r.json())
     .then(data => {
@@ -2451,13 +2675,18 @@ document.getElementById('gratitudeCancelBtn')?.addEventListener('click', () => {
     .finally(tick);
   setInterval(tick, 30000);
 
-  presence.addEventListener('click', () => {
+  function cycle() {
     if (activeList.length < 2) return;
     cur = (cur + 1) % activeList.length;
-    img.style.opacity = '0';
+    if (img) img.style.opacity = '0';
+    if (mobileImg) mobileImg.style.opacity = '0';
     setTimeout(() => {
-      img.src = activeList[cur];
-      img.style.opacity = '1';
+      setPortraitSrc(activeList[cur]);
+      if (img) img.style.opacity = '1';
+      if (mobileImg) mobileImg.style.opacity = '1';
     }, 200);
-  });
+  }
+
+  presence?.addEventListener('click', cycle);
+  mobilePresence?.addEventListener('click', cycle);
 })();
