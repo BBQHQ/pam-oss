@@ -1808,6 +1808,44 @@ input[type="datetime-local"]:focus { border-color: var(--accent); }
 .sfx-status { margin-top: 0.8rem; font-size: 0.78rem; color: var(--accent); min-height: 1.1em; }
 .sfx-status.error { color: #ff7b7b; }
 
+/* ─── Brand avatar slot ─────────────────── */
+.settings-row-avatar {
+  align-items: center;
+}
+
+.brand-avatar-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-avatar-preview {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border: 1px solid var(--card-border);
+  background: #000;
+  flex-shrink: 0;
+}
+
+.brand-avatar-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.brand-avatar-upload { font-size: 0.72rem; padding: 0.3rem 0.7rem; }
+
+.brand-avatar-clear {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.brand-avatar-clear:hover { color: #ff7b7b; border-color: rgba(255,123,123,0.3); }
+
 /* ─── Portraits manager ──────────────────── */
 .portrait-period-list {
   display: flex;

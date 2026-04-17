@@ -1949,6 +1949,7 @@ async function loadSettings() {
 
     // Apply branding from settings (assistant_name replaces "PAM" across the UI)
     applyBranding(data.assistant_name?.value || 'PAM');
+    applyBrandAvatar(data.brand_avatar_url?.value || '');
 
     await refreshSFXRegistry();
     renderSFXManager();
@@ -1990,6 +1991,51 @@ function applyBranding(name) {
     });
   }
 }
+
+// ─── Brand avatar (top-left logo) ────────────────
+
+const BRAND_AVATAR_DEFAULT = '/img/pam3.png';
+
+function applyBrandAvatar(url) {
+  const target = url && url.trim() ? url : BRAND_AVATAR_DEFAULT;
+  const preview = document.getElementById('brandAvatarPreview');
+  if (preview) preview.src = target;
+  document.querySelectorAll('.pam-avatar').forEach(img => { img.src = target; });
+}
+
+async function uploadBrandAvatar(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const statusEl = document.getElementById('settingsStatus');
+  if (statusEl) statusEl.textContent = 'Uploading avatar…';
+  const resp = await fetch(`${API}/settings/avatar`, { method: 'POST', body: fd });
+  if (resp.ok) {
+    const body = await resp.json();
+    applyBrandAvatar(body.url);
+    if (statusEl) {
+      statusEl.textContent = 'Avatar updated.';
+      clearTimeout(uploadBrandAvatar._t);
+      uploadBrandAvatar._t = setTimeout(() => { statusEl.textContent = ''; }, 2500);
+    }
+  } else {
+    const err = await resp.json().catch(() => ({}));
+    if (statusEl) statusEl.textContent = err.detail || 'Avatar upload failed.';
+  }
+}
+
+async function clearBrandAvatar() {
+  if (!confirm('Reset to the default avatar?')) return;
+  const resp = await fetch(`${API}/settings/avatar`, { method: 'DELETE' });
+  if (resp.ok) applyBrandAvatar('');
+}
+
+document.getElementById('brandAvatarInput')?.addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  uploadBrandAvatar(file);
+  e.target.value = '';
+});
+document.getElementById('brandAvatarClearBtn')?.addEventListener('click', clearBrandAvatar);
 
 // ─── Portraits manager UI ────────────────────────
 

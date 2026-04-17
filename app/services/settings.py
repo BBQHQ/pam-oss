@@ -17,6 +17,7 @@ DEFAULTS: dict[str, tuple[Any, str]] = {
     "timezone": ("America/New_York", "notifications"),
     "briefing_email_recipient": ("", "notifications"),
     "assistant_name": ("PAM", "ui"),
+    "brand_avatar_url": ("", "ui"),
     "sfx_enabled": (True, "ui"),
     "sfx_volume": (0.6, "ui"),
     **{f"sfx_pool_{p}_enabled": (True, "ui") for p in SFX_POOLS},

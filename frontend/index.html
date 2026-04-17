@@ -449,13 +449,27 @@
         <div class="page hidden" id="page-settings">
           <div class="card settings-card">
             <div class="card-header"><h2>Identity</h2></div>
-            <p class="card-desc">Give your assistant a name. All "PAM" text in the UI updates live.</p>
+            <p class="card-desc">Give your assistant a name and avatar. Updates live across the UI.</p>
             <div class="settings-grid">
               <label class="settings-row">
                 <span class="settings-label">Assistant name</span>
                 <input type="text" maxlength="32" class="settings-input" data-setting="assistant_name" placeholder="PAM">
                 <span class="settings-hint">Defaults to PAM</span>
               </label>
+              <div class="settings-row settings-row-avatar">
+                <span class="settings-label">Avatar</span>
+                <div class="brand-avatar-slot">
+                  <img id="brandAvatarPreview" class="brand-avatar-preview" src="/img/pam3.png" alt="Current avatar">
+                  <div class="brand-avatar-actions">
+                    <label class="upload-label brand-avatar-upload">
+                      Upload
+                      <input type="file" id="brandAvatarInput" accept="image/*">
+                    </label>
+                    <button type="button" class="brand-avatar-clear" id="brandAvatarClearBtn">Reset</button>
+                  </div>
+                </div>
+                <span class="settings-hint">Shown top-left next to the name</span>
+              </div>
             </div>
           </div>
 
