@@ -71,6 +71,19 @@ cp .env.example .env             # edit if you want to override defaults
 
 You have two options. **Option A is the easy path on Windows** — no compiler needed.
 
+#### Pick your model
+
+| Tier | Model file | Disk | ~RAM | Language | When to pick |
+|---|---|---|---|---|---|
+| **Lean** | [`ggml-base.en-q5_1.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q5_1.bin) | 57 MB | ~280 MB | English only | Any laptop from the last decade, CPU-only, 8 GB+ RAM. English dictation. |
+| **Balanced** | [`ggml-small.en-q5_1.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q5_1.bin) | 181 MB | ~600 MB | English only | Modern laptop, 16 GB RAM, CPU or iGPU. Near-human English accuracy. |
+| **Pro** ⭐ | [`ggml-large-v3-turbo-q5_0.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) | 547 MB | ~1.5 GB | Multilingual | Desktop, 16 GB+ RAM, or any GPU. **PAM's default.** |
+| **Max Speed** | [`ggml-large-v3-turbo.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin) | 1.5 GB | ~3 GB | Multilingual | NVIDIA GPU or Apple Silicon. Full-precision turbo — fastest top-tier inference. For maximum *accuracy* (not speed), swap to [`ggml-large-v3.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin) (3.1 GB, ~3.5 GB RAM). |
+
+> **Heads up:** `.en` models (Lean, Balanced) only transcribe English. PAM does **not** warn you at runtime — pick a multilingual tier if you ever speak anything else.
+
+Whichever tier you pick, set `WHISPER_MODEL=<filename>` in `.env` to match. The default in `.env.example` is the Pro tier.
+
 #### Option A — Download pre-built binaries (recommended for Windows)
 
 1. Go to the whisper.cpp releases page: [github.com/ggerganov/whisper.cpp/releases](https://github.com/ggerganov/whisper.cpp/releases).
@@ -90,7 +103,7 @@ whisper/
     └── ggml-large-v3-turbo-q5_0.bin
 ```
 
-Prefer a smaller/faster model? Browse the [ggerganov/whisper.cpp model index](https://huggingface.co/ggerganov/whisper.cpp/tree/main) and swap the filename. Set `WHISPER_MODEL=<filename>` in `.env` to match.
+Prefer a different tier? See the [model table above](#pick-your-model), or browse the full [ggerganov/whisper.cpp model index](https://huggingface.co/ggerganov/whisper.cpp/tree/main) and set `WHISPER_MODEL=<filename>` in `.env` to match.
 
 #### Option B — Build from source
 
@@ -100,11 +113,11 @@ Only needed if a pre-built binary doesn't exist for your platform (e.g., Linux o
 ./scripts/install_whisper.sh     # Windows: .\scripts\install_whisper.ps1
 ```
 
-This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and downloads the default model. Takes 2–10 minutes.
+This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and downloads the **Pro** tier model. Takes 2–10 minutes.
 
-Override the model:
+Override the model (see the [tier table](#pick-your-model)):
 ```bash
-WHISPER_MODEL=ggml-base.en-q5_0.bin ./scripts/install_whisper.sh
+WHISPER_MODEL=ggml-base.en-q5_1.bin ./scripts/install_whisper.sh
 ```
 
 ### 3. Run
@@ -353,7 +366,8 @@ You should now see `whisper-server.exe` directly inside `whisper\` alongside a b
 
 **4c. Download the speech model:**
 1. Inside `whisper\`, create a subfolder named `models`.
-2. Download [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~500 MB) and save it into `whisper\models\`.
+2. Download [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~547 MB) and save it into `whisper\models\`. This is the **Pro** tier — PAM's default and the right starting point for most desktops and modern laptops.
+3. On older or low-RAM hardware, or if you want maximum accuracy on a beefy GPU? See the [model tier table](#pick-your-model) above for smaller and larger options. If you download a different file, open `.env` in Notepad and set `WHISPER_MODEL=<the filename you downloaded>`.
 
 Final layout check — inside your PAM folder you should have:
 ```
