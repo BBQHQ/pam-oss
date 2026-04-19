@@ -372,19 +372,19 @@ You should now see `whisper-server.exe` directly inside `whisper\` alongside a b
 **4c. Download the speech model:**
 
 1. Inside `whisper\`, create a subfolder named `models`.
-2. Pick the row that best matches your computer, click the filename to download, and save it into `whisper\models\`:
+2. Pick the tier that matches your hardware, click the filename to download, and save it into `whisper\models\`:
 
-   | Your computer | Click to download | Size |
-   |---|---|---|
-   | Older laptop, English only | [ggml-base.en-q5_1.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q5_1.bin) | 57 MB |
-   | Modern laptop (16 GB RAM), English only | [ggml-small.en-q5_1.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q5_1.bin) | 181 MB |
-   | **Desktop, or any GPU — PAM's default** ⭐ | [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) | 547 MB |
-   | NVIDIA GPU or Apple Silicon | [ggml-large-v3-turbo.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin) | 1.5 GB |
+   | Tier | Model file | Disk | ~RAM | Language | When to pick |
+   |---|---|---|---|---|---|
+   | **Lean** | [`ggml-base.en-q5_1.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q5_1.bin) | 57 MB | ~280 MB | English only | Any laptop from the last decade, CPU-only, 8 GB+ RAM. English dictation. |
+   | **Balanced** | [`ggml-small.en-q5_1.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q5_1.bin) | 181 MB | ~600 MB | English only | Modern laptop, 16 GB RAM, CPU or iGPU. Near-human English accuracy. |
+   | **Pro** ⭐ | [`ggml-large-v3-turbo-q5_0.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) | 547 MB | ~1.5 GB | Multilingual | Desktop, 16 GB+ RAM, or any GPU. **PAM's default.** |
+   | **Max Speed** | [`ggml-large-v3-turbo.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin) | 1.5 GB | ~3 GB | Multilingual | NVIDIA GPU or Apple Silicon. Full-precision turbo — fastest top-tier inference. For maximum *accuracy* (not speed), swap to [`ggml-large-v3.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin) (3.1 GB, ~3.5 GB RAM). |
 
-   - **Not sure which row to pick?** Use the Pro default (third row) — it works on most computers with 4+ GB of free RAM.
-   - **Heads up:** the first two rows (the `.en` files) only understand English. If you ever speak another language, pick one of the bottom two.
+   - **Not sure which tier?** Use Pro — it works on any computer with ~2 GB of free RAM.
+   - **Heads up:** the `.en` tiers (Lean, Balanced) only understand English. Pick a multilingual tier if you ever speak anything else.
 
-3. **If you picked anything other than the Pro default**, open `.env` in Notepad and change the `WHISPER_MODEL=` line to match the filename you downloaded. (The default `.env` is already set up for the Pro file, so no edit needed if you stuck with that.)
+3. **If you picked anything other than Pro**, open `.env` in Notepad and change the `WHISPER_MODEL=` line to match the filename you downloaded. (The default `.env` is already set up for the Pro file, so no edit needed if you stuck with that.)
 
 Final layout check — inside your PAM folder you should have:
 ```
