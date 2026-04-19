@@ -69,9 +69,36 @@ cp .env.example .env             # edit if you want to override defaults
 
 ### 2. Install Whisper (voice transcription)
 
-You have two options. **Option A is the easy path on Windows** — no compiler needed.
+PAM's voice features need two pieces installed separately: the **whisper.cpp engine** (a small binary called `whisper-server`) and a **speech model** (a `.bin` file the engine loads).
 
-#### Pick your model
+#### 2a. Install the engine
+
+Two options. **Option A is the easy path on Windows** — no compiler needed.
+
+##### Option A — Download pre-built binaries (recommended for Windows)
+
+1. Go to the whisper.cpp releases page: [github.com/ggerganov/whisper.cpp/releases](https://github.com/ggerganov/whisper.cpp/releases).
+2. Download the build that matches your hardware:
+   - **CUDA GPU (NVIDIA):** `whisper-cublas-<ver>-bin-x64.zip`
+   - **CPU-only:** `whisper-blas-bin-x64.zip` (or `-Win32.zip` on 32-bit systems)
+3. Create a `whisper\` folder inside your PAM directory and extract the zip into it. The exe and DLLs should land in `whisper\whisper-server.exe` etc. If your zip extracts to a `Release\` subfolder, move the contents up one level so `whisper-server.exe` sits directly in `whisper\`.
+
+##### Option B — Build from source (Linux, macOS, custom)
+
+Only needed if a pre-built binary doesn't exist for your platform (e.g., Linux or Apple Silicon) or you want to customize the build. **Requires CMake and a C++ compiler toolchain** (see Prerequisites).
+
+```bash
+./scripts/install_whisper.sh     # Windows: .\scripts\install_whisper.ps1
+```
+
+This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and auto-downloads the **Pro** tier model (see §2b). If you're happy with the Pro default, you can skip the manual download below. Takes 2–10 minutes.
+
+To install a different tier with the script, set `WHISPER_MODEL` first:
+```bash
+WHISPER_MODEL=ggml-base.en-q5_1.bin ./scripts/install_whisper.sh
+```
+
+#### 2b. Pick a model
 
 | Tier | Model file | Disk | ~RAM | Language | When to pick |
 |---|---|---|---|---|---|
@@ -82,42 +109,20 @@ You have two options. **Option A is the easy path on Windows** — no compiler n
 
 > **Heads up:** `.en` models (Lean, Balanced) only transcribe English. PAM does **not** warn you at runtime — pick a multilingual tier if you ever speak anything else.
 
-Whichever tier you pick, set `WHISPER_MODEL=<filename>` in `.env` to match. The default in `.env.example` is the Pro tier.
+1. Click your tier's filename in the table to download it.
+2. Save it to `whisper/models/<filename>` (create the `models/` folder if needed).
+3. If you picked anything other than Pro, set `WHISPER_MODEL=<filename>` in `.env`. The default in `.env.example` is the Pro tier.
 
-#### Option A — Download pre-built binaries (recommended for Windows)
-
-1. Go to the whisper.cpp releases page: [github.com/ggerganov/whisper.cpp/releases](https://github.com/ggerganov/whisper.cpp/releases).
-2. Download the build that matches your hardware:
-   - **CUDA GPU (NVIDIA):** `whisper-cublas-<ver>-bin-x64.zip`
-   - **CPU-only:** `whisper-blas-bin-x64.zip` (or `-Win32.zip` on 32-bit systems)
-3. Create a `whisper\` folder inside your PAM directory and extract the zip into it. The exe and DLLs should land in `whisper\whisper-server.exe` etc. If your zip extracts to a `Release\` subfolder, move the contents up one level so `whisper-server.exe` sits directly in `whisper\`.
-4. Download the model file: [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~500 MB). Save it to `whisper\models\ggml-large-v3-turbo-q5_0.bin` (create the `models\` folder if needed).
+Want a tier that's not in the table? Browse the full [ggerganov/whisper.cpp model index](https://huggingface.co/ggerganov/whisper.cpp/tree/main) and use any `.bin` filename — same three steps apply.
 
 Final layout should look like:
 ```
 whisper/
-├── whisper-server.exe
-├── ggml-cuda.dll        (and other .dlls from the zip)
+├── whisper-server.exe        (or whisper-server on Linux/macOS)
+├── ggml-cuda.dll             (and other .dlls on Windows)
 ├── ...
 └── models/
-    └── ggml-large-v3-turbo-q5_0.bin
-```
-
-Prefer a different tier? See the [model table above](#pick-your-model), or browse the full [ggerganov/whisper.cpp model index](https://huggingface.co/ggerganov/whisper.cpp/tree/main) and set `WHISPER_MODEL=<filename>` in `.env` to match.
-
-#### Option B — Build from source
-
-Only needed if a pre-built binary doesn't exist for your platform (e.g., Linux or Apple Silicon) or you want to customize the build. **Requires CMake and a C++ compiler toolchain** (see Prerequisites).
-
-```bash
-./scripts/install_whisper.sh     # Windows: .\scripts\install_whisper.ps1
-```
-
-This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and downloads the **Pro** tier model. Takes 2–10 minutes.
-
-Override the model (see the [tier table](#pick-your-model)):
-```bash
-WHISPER_MODEL=ggml-base.en-q5_1.bin ./scripts/install_whisper.sh
+    └── ggml-large-v3-turbo-q5_0.bin    (or whichever tier you picked)
 ```
 
 ### 3. Run
@@ -367,7 +372,7 @@ You should now see `whisper-server.exe` directly inside `whisper\` alongside a b
 **4c. Download the speech model:**
 1. Inside `whisper\`, create a subfolder named `models`.
 2. Download [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~547 MB) and save it into `whisper\models\`. This is the **Pro** tier — PAM's default and the right starting point for most desktops and modern laptops.
-3. On older or low-RAM hardware, or if you want maximum accuracy on a beefy GPU? See the [model tier table](#pick-your-model) above for smaller and larger options. If you download a different file, open `.env` in Notepad and set `WHISPER_MODEL=<the filename you downloaded>`.
+3. On older or low-RAM hardware, or if you want maximum accuracy on a beefy GPU? See the [model tier table](#2b-pick-a-model) above for smaller and larger options. If you download a different file, open `.env` in Notepad and set `WHISPER_MODEL=<the filename you downloaded>`.
 
 Final layout check — inside your PAM folder you should have:
 ```
