@@ -91,7 +91,7 @@ Only needed if a pre-built binary doesn't exist for your platform (e.g., Linux o
 ./scripts/install_whisper.sh     # Windows: .\scripts\install_whisper.ps1
 ```
 
-This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and auto-downloads the **Pro** tier model (see §2b). If you're happy with the Pro default, you can skip the manual download below. Takes 2–10 minutes.
+This clones [whisper.cpp](https://github.com/ggerganov/whisper.cpp), detects your accelerator (CUDA / Metal / CPU), builds `whisper-server`, and auto-downloads the **Pro** tier model (see step 2b below). If you're happy with the Pro default, you can skip the manual download below. Takes 2–10 minutes.
 
 To install a different tier with the script, set `WHISPER_MODEL` first:
 ```bash
@@ -370,9 +370,21 @@ Instead of compiling Whisper from source, you'll download the pre-built Windows 
 You should now see `whisper-server.exe` directly inside `whisper\` alongside a bunch of DLLs.
 
 **4c. Download the speech model:**
+
 1. Inside `whisper\`, create a subfolder named `models`.
-2. Download [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) (~547 MB) and save it into `whisper\models\`. This is the **Pro** tier — PAM's default and the right starting point for most desktops and modern laptops.
-3. On older or low-RAM hardware, or if you want maximum accuracy on a beefy GPU? See the [model tier table](#2b-pick-a-model) above for smaller and larger options. If you download a different file, open `.env` in Notepad and set `WHISPER_MODEL=<the filename you downloaded>`.
+2. Pick the row that best matches your computer, click the filename to download, and save it into `whisper\models\`:
+
+   | Your computer | Click to download | Size |
+   |---|---|---|
+   | Older laptop, English only | [ggml-base.en-q5_1.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q5_1.bin) | 57 MB |
+   | Modern laptop (16 GB RAM), English only | [ggml-small.en-q5_1.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q5_1.bin) | 181 MB |
+   | **Desktop, or any GPU — PAM's default** ⭐ | [ggml-large-v3-turbo-q5_0.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin) | 547 MB |
+   | NVIDIA GPU or Apple Silicon | [ggml-large-v3-turbo.bin](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin) | 1.5 GB |
+
+   - **Not sure which row to pick?** Use the Pro default (third row) — it works on most computers with 4+ GB of free RAM.
+   - **Heads up:** the first two rows (the `.en` files) only understand English. If you ever speak another language, pick one of the bottom two.
+
+3. **If you picked anything other than the Pro default**, open `.env` in Notepad and change the `WHISPER_MODEL=` line to match the filename you downloaded. (The default `.env` is already set up for the Pro file, so no edit needed if you stuck with that.)
 
 Final layout check — inside your PAM folder you should have:
 ```
@@ -380,7 +392,7 @@ whisper\
 ├── whisper-server.exe
 ├── (various .dll files)
 └── models\
-    └── ggml-large-v3-turbo-q5_0.bin
+    └── ggml-large-v3-turbo-q5_0.bin    (or whichever model you picked)
 ```
 
 ### 5. Start PAM
