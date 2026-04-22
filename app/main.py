@@ -185,7 +185,17 @@ def main():
     # Make sure certs exist before uvicorn binds to them
     if settings.ssl_auto_generate:
         ensure_certs()
-    kwargs = dict(host=settings.pam_host, port=settings.pam_port)
+    # Port can be overridden at runtime via Settings UI (stored in notes.db).
+    # Falls back to config.pam_port (from .env or default).
+    port = settings.pam_port
+    try:
+        from app.services.settings import get_setting
+        override = asyncio.run(get_setting("pam_port", settings.pam_port))
+        if isinstance(override, int) and 1024 <= override <= 65535:
+            port = override
+    except Exception:
+        pass
+    kwargs = dict(host=settings.pam_host, port=port)
     if cert.exists() and key.exists():
         kwargs["ssl_certfile"] = str(cert)
         kwargs["ssl_keyfile"] = str(key)

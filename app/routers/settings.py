@@ -34,6 +34,14 @@ async def list_settings():
 async def save_setting(body: SettingSet):
     if body.key not in DEFAULTS:
         return {"error": f"Unknown setting key: {body.key}"}
+    if body.key == "pam_port":
+        try:
+            port = int(body.value)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "Port must be an integer.")
+        if not 1024 <= port <= 65535:
+            raise HTTPException(400, "Port must be between 1024 and 65535.")
+        body = SettingSet(key=body.key, value=port, category=body.category)
     return await set_setting(body.key, body.value, body.category)
 
 

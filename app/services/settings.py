@@ -22,6 +22,9 @@ DEFAULTS: dict[str, tuple[Any, str]] = {
     "sfx_volume": (0.6, "ui"),
     **{f"sfx_pool_{p}_enabled": (True, "ui") for p in SFX_POOLS},
     **{f"sfx_pool_{p}_volume": (1.0, "ui") for p in SFX_POOLS},
+    # Network — PAM's broadcast port. Change requires restart (port is bound
+    # at uvicorn.run()). Default matches config.pam_port.
+    "pam_port": (8400, "network"),
 }
 
 

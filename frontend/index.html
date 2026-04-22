@@ -522,6 +522,18 @@
           </div>
 
           <div class="card settings-card">
+            <div class="card-header"><h2>Network</h2></div>
+            <p class="card-desc" data-brand-text>What port PAM listens on. Requires a restart to take effect.</p>
+            <div class="settings-grid">
+              <label class="settings-row">
+                <span class="settings-label">Broadcast port</span>
+                <input type="number" min="1024" max="65535" class="settings-input" data-setting="pam_port">
+                <span class="settings-hint">1024–65535 · default 8400 · restart required</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card settings-card">
             <div class="card-header"><h2>UI &amp; Audio</h2></div>
             <p class="card-desc">Sound effects fire on toggles, saves, and wins.</p>
             <div class="settings-grid">
