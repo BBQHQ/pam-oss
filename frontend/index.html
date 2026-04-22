@@ -663,31 +663,117 @@
 
         <!-- ═══ HABITS ═══ -->
         <div class="page hidden" id="page-habits">
-          <div class="card">
-            <div class="card-header">
-              <h2>Today's Habits</h2>
-              <span class="badge habit-badge" id="habitPageProgress" style="display:none">0/0</span>
+          <div class="board-tabs" id="habitsSubtabs">
+            <button class="board-tab active" data-subtab="today" onclick="showHabitsSubtab('today')">Today</button>
+            <button class="board-tab" data-subtab="totals" onclick="showHabitsSubtab('totals')">Totals</button>
+            <button class="board-tab" data-subtab="heatmap" onclick="showHabitsSubtab('heatmap')">Heatmap</button>
+            <button class="board-tab" data-subtab="milestones" onclick="showHabitsSubtab('milestones')">Milestones</button>
+          </div>
+
+          <!-- Today sub-tab -->
+          <div class="subpanel" id="habits-subpanel-today">
+            <div class="card">
+              <div class="card-header">
+                <h2>Today's Habits</h2>
+                <span class="badge habit-badge" id="habitPageProgress" style="display:none">0/0</span>
+              </div>
+              <div class="habits-progress-bar" id="habitsProgressBar">
+                <div class="habits-progress-fill" id="habitsProgressFill"></div>
+              </div>
+              <div class="habits-list" id="habitsPageList">
+                <p class="empty">No habits yet. Add your first one below.</p>
+              </div>
             </div>
-            <div class="habits-progress-bar" id="habitsProgressBar">
-              <div class="habits-progress-fill" id="habitsProgressFill"></div>
-            </div>
-            <div class="habits-list" id="habitsPageList">
-              <p class="empty">No habits yet. Add your first one below.</p>
+            <div class="card">
+              <div class="card-header"><h2>Add Habit</h2></div>
+              <div class="input-row">
+                <input type="text" id="habitInput" placeholder="e.g. Work out, Read, Play music..." autocomplete="off">
+                <select id="habitRecurrence" class="habit-select">
+                  <option value="daily">Daily</option>
+                  <option value="weekdays">Weekdays</option>
+                  <option value="MWF">MWF</option>
+                  <option value="TTh">TTh</option>
+                  <option value="weekly">Weekly</option>
+                </select>
+                <button class="btn-primary" id="habitAddBtn">Add</button>
+              </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header"><h2>Add Habit</h2></div>
-            <div class="input-row">
-              <input type="text" id="habitInput" placeholder="e.g. Work out, Read, Play music..." autocomplete="off">
-              <select id="habitRecurrence" class="habit-select">
-                <option value="daily">Daily</option>
-                <option value="weekdays">Weekdays</option>
-                <option value="MWF">MWF</option>
-                <option value="TTh">TTh</option>
-                <option value="weekly">Weekly</option>
-              </select>
-              <button class="btn-primary" id="habitAddBtn">Add</button>
+
+          <!-- Totals sub-tab -->
+          <div class="subpanel hidden" id="habits-subpanel-totals">
+            <div class="ht-header">
+              <h2 class="ht-title">All-Time Totals</h2>
+              <div class="ht-subtitle" id="htTotalsSub">—</div>
             </div>
+            <div class="ht-scoreboard" id="htScoreboard">
+              <p class="empty">Loading totals…</p>
+            </div>
+            <div class="card" style="margin-top:1.5rem;">
+              <div class="card-header"><h2>Hall of Fame</h2></div>
+              <div class="ht-hof" id="htHallOfFame">
+                <p class="empty">—</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Heatmap sub-tab -->
+          <div class="subpanel hidden" id="habits-subpanel-heatmap">
+            <div class="ht-header">
+              <div class="ht-header-row">
+                <h2 class="ht-title">All-Time Heatmap</h2>
+                <div class="ht-year-nav">
+                  <button class="btn-icon" id="htYearPrev" title="Previous year">‹</button>
+                  <span class="ht-year-label" id="htYearLabel">—</span>
+                  <button class="btn-icon" id="htYearNext" title="Next year">›</button>
+                </div>
+              </div>
+              <div class="ht-subtitle" id="htHeatmapSub">—</div>
+            </div>
+            <div class="ht-stat-row" id="htHeatmapStats"></div>
+            <div class="card">
+              <div class="ht-heatmap-head">
+                <div class="ht-heatmap-title">Daily Activity</div>
+                <div class="ht-heatmap-sub" id="htHeatmapCardSub">—</div>
+              </div>
+              <div class="ht-heatmap-wrap">
+                <div class="ht-month-labels" id="htHeatmapMonths"></div>
+                <div class="ht-heatmap-body">
+                  <div class="ht-weekday-col">
+                    <span></span><span>M</span><span></span><span>W</span><span></span><span>F</span><span></span>
+                  </div>
+                  <div class="ht-grid" id="htHeatmapGrid"></div>
+                </div>
+              </div>
+              <div class="ht-legend">
+                <span>Less</span>
+                <span class="ht-cell l0"></span>
+                <span class="ht-cell l1"></span>
+                <span class="ht-cell l2"></span>
+                <span class="ht-cell l3"></span>
+                <span class="ht-cell l4"></span>
+                <span>More</span>
+              </div>
+            </div>
+            <div class="card" style="margin-top:1.5rem;">
+              <div class="card-header"><h2>Per-Habit Patterns</h2></div>
+              <div class="ht-habit-strips" id="htHabitStrips">
+                <p class="empty">—</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Milestones sub-tab -->
+          <div class="subpanel hidden" id="habits-subpanel-milestones">
+            <div class="ht-header">
+              <h2 class="ht-title">Milestones</h2>
+              <div class="ht-subtitle" id="htMilestonesSub">—</div>
+            </div>
+            <div class="ht-ms-summary" id="htMilestoneSummary"></div>
+            <div class="ht-ms-list" id="htMilestoneList">
+              <p class="empty">Loading milestones…</p>
+            </div>
+            <div class="ht-ms-callout" id="htMilestoneCallout" style="display:none"></div>
           </div>
         </div>
 

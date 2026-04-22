@@ -2719,6 +2719,333 @@ document.getElementById('habitInput')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') addHabit();
 });
 
+function showHabitsSubtab(tab) {
+  document.querySelectorAll('#habitsSubtabs .board-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subtab === tab);
+  });
+  ['today', 'totals', 'heatmap', 'milestones'].forEach(t => {
+    const panel = document.getElementById(`habits-subpanel-${t}`);
+    if (panel) panel.classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'today') loadHabitsPage();
+  if (tab === 'totals') loadHabitsTotals();
+  if (tab === 'heatmap') loadHabitsHeatmap();
+  if (tab === 'milestones') loadHabitsMilestones();
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return iso; }
+}
+
+async function loadHabitsTotals() {
+  const sub = document.getElementById('htTotalsSub');
+  const board = document.getElementById('htScoreboard');
+  const hof = document.getElementById('htHallOfFame');
+  try {
+    const resp = await fetch(`${API}/todos/habits/totals`);
+    const d = await resp.json();
+    const since = d.tracking_since ? fmtDate(d.tracking_since) : '—';
+    sub.textContent = `Since ${since} · ${d.days_tracked} days tracked · ${d.total_habits} habits`;
+
+    board.innerHTML = [
+      { v: d.total_completions + '×', l: 'Total Completions', sub: '' },
+      { v: d.active_days, l: 'Active Days', sub: d.days_tracked ? `of ${d.days_tracked}` : '' },
+      { v: d.perfect_days, l: 'Perfect Days', sub: 'all habits done' },
+      { v: d.longest_streak_ever + 'd', l: 'Longest Streak Ever', sub: '' },
+    ].map(s => `
+      <div class="ht-stat">
+        <div class="ht-stat-value">${esc(String(s.v))}</div>
+        <div class="ht-stat-label">${esc(s.l)}</div>
+        ${s.sub ? `<div class="ht-stat-delta">${esc(s.sub)}</div>` : ''}
+      </div>
+    `).join('');
+
+    if (!d.hall_of_fame || !d.hall_of_fame.length) {
+      hof.innerHTML = '<p class="empty">No habit completions yet.</p>';
+      return;
+    }
+    const topCount = d.hall_of_fame[0].completion_count || 1;
+    hof.innerHTML = d.hall_of_fame.map((h, i) => {
+      const pct = Math.max(2, Math.round((h.completion_count / topCount) * 100));
+      return `
+        <div class="ht-hof-row">
+          <div class="ht-hof-rank">#${i + 1}</div>
+          <div class="ht-hof-name">
+            ${esc(h.text)}
+            <div class="ht-hof-bar"><div class="ht-hof-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="ht-hof-count">${h.completion_count}×</div>
+          <div class="ht-hof-best">best ${h.streak_best}d</div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load habits totals:', err);
+    board.innerHTML = '<p class="empty">Failed to load totals.</p>';
+  }
+}
+
+function _heatLevel(count) {
+  if (count <= 0) return 0;
+  if (count <= 2) return 1;
+  if (count <= 4) return 2;
+  if (count <= 6) return 3;
+  return 4;
+}
+
+function _stripLevel(flags, i) {
+  if (!flags[i]) return 0;
+  let density = 0;
+  for (let j = Math.max(0, i - 6); j <= i; j++) density += flags[j] ? 1 : 0;
+  if (density >= 6) return 4;
+  if (density >= 4) return 3;
+  if (density >= 2) return 2;
+  return 1;
+}
+
+function _fmtShort(iso) {
+  try {
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch { return iso; }
+}
+
+let _htYear = null;
+
+async function loadHabitsHeatmap(year) {
+  const sub = document.getElementById('htHeatmapSub');
+  const cardSub = document.getElementById('htHeatmapCardSub');
+  const stats = document.getElementById('htHeatmapStats');
+  const grid = document.getElementById('htHeatmapGrid');
+  const months = document.getElementById('htHeatmapMonths');
+  const strips = document.getElementById('htHabitStrips');
+  const yearLabel = document.getElementById('htYearLabel');
+  const prevBtn = document.getElementById('htYearPrev');
+  const nextBtn = document.getElementById('htYearNext');
+
+  try {
+    const url = year ? `${API}/todos/habits/heatmap?year=${year}` : `${API}/todos/habits/heatmap`;
+    const resp = await fetch(url);
+    const d = await resp.json();
+    _htYear = d.year;
+    yearLabel.textContent = d.year;
+    const thisYear = new Date().getFullYear();
+    nextBtn.disabled = d.year >= thisYear;
+
+    const sr = d.stat_row || {};
+    const avg = sr.active_days > 0
+      ? (sr.total_completions / sr.active_days).toFixed(1)
+      : '0.0';
+    sub.textContent = `${d.days} days · ${sr.total_completions || 0} completions · ${sr.active_days || 0} active days`;
+    cardSub.textContent = `${avg} per active day`;
+
+    stats.innerHTML = `
+      <div class="ht-stat-cell">
+        <div class="ht-stat-label">Total Completions</div>
+        <div class="ht-stat-value accent">${sr.total_completions || 0}</div>
+        <div class="ht-stat-sub">across ${d.habit_strips.length} habit${d.habit_strips.length === 1 ? '' : 's'}</div>
+      </div>
+      <div class="ht-stat-cell">
+        <div class="ht-stat-label">Current Streak</div>
+        <div class="ht-stat-value accent">${sr.current_streak || 0}d</div>
+        <div class="ht-stat-sub">consecutive days active</div>
+      </div>
+      <div class="ht-stat-cell">
+        <div class="ht-stat-label">Longest Streak</div>
+        <div class="ht-stat-value blue">${sr.longest_streak || 0}d</div>
+        <div class="ht-stat-sub">${d.year}</div>
+      </div>
+      <div class="ht-stat-cell">
+        <div class="ht-stat-label">Best Day</div>
+        <div class="ht-stat-value">${sr.best_day ? sr.best_day.count : 0} ${sr.best_day && sr.best_day.count === 1 ? 'habit' : 'habits'}</div>
+        <div class="ht-stat-sub">${sr.best_day ? esc(_fmtShort(sr.best_day.date)) : '—'}</div>
+      </div>
+    `;
+
+    const firstDate = new Date(d.start_date + 'T00:00:00');
+    const leadingPad = firstDate.getDay();
+    const DAYS = d.daily_counts.length;
+    const targetCells = 53 * 7;
+
+    const gridHTML = [];
+    for (let i = 0; i < leadingPad; i++) gridHTML.push('<div class="ht-cell empty"></div>');
+    for (const c of d.daily_counts) {
+      const lvl = _heatLevel(c.count);
+      const title = `${_fmtShort(c.date)} · ${c.count} habit${c.count === 1 ? '' : 's'}`;
+      gridHTML.push(`<div class="ht-cell l${lvl}" title="${esc(title)}"></div>`);
+    }
+    const trail = leadingPad + DAYS;
+    for (let i = trail; i < targetCells; i++) gridHTML.push('<div class="ht-cell empty"></div>');
+    grid.innerHTML = gridHTML.join('');
+
+    const labelHTML = [];
+    const seen = new Set();
+    for (let i = 0; i < DAYS; i++) {
+      const absIdx = leadingPad + i;
+      const row = absIdx % 7;
+      const col = Math.floor(absIdx / 7);
+      if (row !== 0) continue;
+      const dateObj = new Date(d.daily_counts[i].date + 'T00:00:00');
+      const mKey = dateObj.getMonth();
+      if (seen.has(mKey)) continue;
+      seen.add(mKey);
+      const label = dateObj.toLocaleString(undefined, { month: 'short' });
+      labelHTML.push(`<span style="grid-column-start:${1 + col}">${esc(label)}</span>`);
+    }
+    months.innerHTML = labelHTML.join('');
+
+    if (!d.habit_strips || !d.habit_strips.length) {
+      strips.innerHTML = '<p class="empty">No habits yet.</p>';
+    } else {
+      strips.innerHTML = d.habit_strips.map(h => {
+        const hitSet = new Set(h.dates || []);
+        const flags = d.daily_counts.map(c => hitSet.has(c.date) ? 1 : 0);
+        const yearTotal = h.year_total || 0;
+        const pct = DAYS > 0 ? Math.round((yearTotal / DAYS) * 100) : 0;
+        let hs = 0;
+        for (let i = flags.length - 1; i >= 0; i--) {
+          if (flags[i]) hs++; else break;
+        }
+
+        const cellsHTML = [];
+        for (let i = 0; i < leadingPad; i++) cellsHTML.push('<div class="ht-cell empty"></div>');
+        for (let i = 0; i < DAYS; i++) {
+          const lvl = _stripLevel(flags, i);
+          const title = `${_fmtShort(d.daily_counts[i].date)} · ${esc(h.text)} · ${flags[i] ? 'done' : 'missed'}`;
+          cellsHTML.push(`<div class="ht-cell l${lvl}" title="${title}"></div>`);
+        }
+        const htr = leadingPad + DAYS;
+        for (let i = htr; i < targetCells; i++) cellsHTML.push('<div class="ht-cell empty"></div>');
+
+        return `
+          <div class="ht-strip-row">
+            <div class="ht-strip-meta">
+              <div class="ht-strip-name">${esc(h.text)}</div>
+              <div class="ht-strip-sub">${hs}d streak · ${pct}% of days</div>
+            </div>
+            <div class="ht-strip-grid">${cellsHTML.join('')}</div>
+            <div class="ht-strip-total">
+              <span class="ht-strip-total-num">${yearTotal}</span>
+              <span class="ht-strip-total-lbl">in ${d.year}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load habits heatmap:', err);
+    stats.innerHTML = '<p class="empty">Failed to load heatmap.</p>';
+  }
+}
+
+document.getElementById('htYearPrev')?.addEventListener('click', () => {
+  if (_htYear) loadHabitsHeatmap(_htYear - 1);
+});
+document.getElementById('htYearNext')?.addEventListener('click', () => {
+  if (_htYear) loadHabitsHeatmap(_htYear + 1);
+});
+
+async function loadHabitsMilestones() {
+  const sub = document.getElementById('htMilestonesSub');
+  const summary = document.getElementById('htMilestoneSummary');
+  const list = document.getElementById('htMilestoneList');
+  const callout = document.getElementById('htMilestoneCallout');
+  try {
+    const resp = await fetch(`${API}/todos/habits/milestones`);
+    const d = await resp.json();
+    const cm = d.closest_milestone;
+    sub.textContent = d.total_habits
+      ? `${d.tiers_unlocked} tiers unlocked across ${d.total_habits} habits${cm ? ` · next: ${cm.habit_text} → ${cm.threshold}× (${cm.remaining} to go)` : ''}`
+      : 'No habits yet.';
+
+    summary.innerHTML = [
+      { v: d.total_habits, l: 'Habits Tracked' },
+      { v: d.total_completions, l: 'Total Completions' },
+      { v: d.tiers_unlocked, l: 'Tiers Unlocked' },
+      { v: d.days_since_start, l: 'Days Tracking' },
+    ].map(s => `
+      <div class="ht-stat">
+        <div class="ht-stat-value">${esc(String(s.v))}</div>
+        <div class="ht-stat-label">${esc(s.l)}</div>
+      </div>
+    `).join('');
+
+    if (!d.habits || !d.habits.length) {
+      list.innerHTML = '<p class="empty">Add a habit to start tracking milestones.</p>';
+      callout.style.display = 'none';
+      return;
+    }
+
+    list.innerHTML = d.habits.map(h => {
+      const next = h.next_tier;
+      const prev = h.prev_threshold || 0;
+      let progPct = 100;
+      if (next) {
+        const span = next.threshold - prev;
+        const done = h.completion_count - prev;
+        progPct = Math.max(2, Math.min(100, Math.round((done / span) * 100)));
+      }
+      const tiers = h.tiers.map((t, i) => {
+        const isNext = next && t.threshold === next.threshold;
+        const isLegend = t.name === 'Legend';
+        const cls = [
+          'ht-ms-tier',
+          t.unlocked ? 'unlocked' : '',
+          isNext ? 'next' : '',
+          isLegend ? 'legend' : '',
+        ].filter(Boolean).join(' ');
+        const medalContent = t.unlocked
+          ? (isLegend ? '★' : '✓')
+          : t.threshold;
+        return `
+          <div class="${cls}">
+            <div class="ht-ms-medal">${esc(String(medalContent))}</div>
+            <div class="ht-ms-tier-label">${esc(t.name)}</div>
+            <div class="ht-ms-tier-threshold">${t.threshold}</div>
+          </div>
+        `;
+      }).join('');
+      const progressText = next
+        ? `${next.remaining} more to ${esc(next.name)} (${next.threshold}×)`
+        : `Legend tier reached`;
+      return `
+        <div class="ht-ms-card">
+          <div class="ht-ms-card-head">
+            <div class="ht-ms-card-name">${esc(h.text)}</div>
+            <div class="ht-ms-card-badges">${h.unlocked_count}/${h.total_tiers} tiers</div>
+            <div class="ht-ms-card-total">${h.completion_count}×</div>
+          </div>
+          <div class="ht-ms-track">${tiers}</div>
+          <div class="ht-ms-progress">
+            <div class="ht-ms-progress-bar"><div class="ht-ms-progress-fill" style="width:${progPct}%"></div></div>
+            <div class="ht-ms-progress-text">${progressText}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (cm) {
+      callout.innerHTML = `
+        <div>
+          <div class="ht-ms-callout-label">Closest Milestone</div>
+          <div class="ht-ms-callout-text">${esc(cm.habit_text)} → ${esc(cm.tier_name)} (${cm.threshold}×)</div>
+        </div>
+        <div class="ht-ms-callout-count">${cm.remaining} to go</div>
+      `;
+      callout.style.display = '';
+    } else {
+      callout.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Failed to load habits milestones:', err);
+    list.innerHTML = '<p class="empty">Failed to load milestones.</p>';
+  }
+}
+
 
 // ─── Gratitude ─────────────────────────────────────
 
