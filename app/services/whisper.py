@@ -179,8 +179,12 @@ async def transcribe(audio_bytes: bytes, filename: str = "audio.wav") -> dict:
 
             if resp.status_code == 200:
                 result = resp.json()
+                # Whisper emits a newline after every segment; collapse all
+                # whitespace runs to single spaces so mid-thought segment
+                # boundaries don't render as line breaks.
+                text = " ".join((result.get("text") or "").split())
                 return {
-                    "text": result.get("text", "").strip(),
+                    "text": text,
                     "duration_ms": elapsed_ms,
                 }
             else:
